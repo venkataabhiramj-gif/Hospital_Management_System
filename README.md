@@ -7,6 +7,7 @@ A guided Java learning project for an outpatient hospital management system, des
 - India-first, single-facility outpatient workflow
 - Staff users on Android and Windows
 - Patient registration, doctor management, appointments, consultation records, prescriptions, medicine inventory, and billing
+- Role-aware desktop navigation and clinic snapshots, with automatic dashboard refresh and in-app stock and expiry alerts
 - Java for application code; supporting formats such as SQL, XML, and Gradle configuration are also part of the project
 
 See [the project brief](docs/PROJECT_BRIEF.md) for the agreed scope, workflow, architecture direction, and deferred features.
@@ -37,6 +38,8 @@ To create a portable Windows app folder with its own Java runtime:
 The app image is created under `desktop/build/package/ClinicDesk/`.
 
 The Android project is in `android/`. Setup, database, Compose deployment, HTTPS, and backup guidance is in [docs/OPERATIONS.md](docs/OPERATIONS.md).
+
+To populate an isolated assignment database with fictional India-style patient, appointment, and medicine records, follow [the opt-in demo data guide](docs/DEMO_DATA.md). Medicine names and example forms are based on India's NLEM 2022; patient details, clinic activity, and stock values are synthetic.
 
 ## Learning guide
 

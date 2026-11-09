@@ -3,6 +3,7 @@ package com.hospital.management.android;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.*;
@@ -23,11 +24,11 @@ public class MainActivity extends Activity {
     private String activeRole="";
     private LinearLayout page;
     private TextView output;
-    private int ink=Color.rgb(29,48,52), teal=Color.rgb(13,111,111), mist=Color.rgb(239,245,244);
+    private int ink=Color.rgb(24,43,58), teal=Color.rgb(20,107,120), mist=Color.rgb(244,247,251), line=Color.rgb(224,232,239);
 
-    @Override public void onCreate(Bundle state) { super.onCreate(state); getWindow().setStatusBarColor(mist); showLogin(); }
+    @Override public void onCreate(Bundle state) { super.onCreate(state); getWindow().setStatusBarColor(mist); getWindow().setNavigationBarColor(mist); getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR); showLogin(); }
     private void base(String title) {
-        ScrollView scroll=new ScrollView(this); page=new LinearLayout(this); page.setOrientation(LinearLayout.VERTICAL); page.setPadding(dp(22),dp(26),dp(22),dp(20)); page.setBackgroundColor(mist);
+        ScrollView scroll=new ScrollView(this); page=new LinearLayout(this); page.setOrientation(LinearLayout.VERTICAL); page.setPadding(dp(20),dp(18),dp(20),dp(24)); page.setBackgroundColor(mist);
         int left=dp(22),top=dp(26),right=dp(22),bottom=dp(20);
         scroll.setOnApplyWindowInsetsListener((view,insets)->{
             int insetLeft,insetTop,insetRight,insetBottom;
@@ -35,7 +36,10 @@ public class MainActivity extends Activity {
             else{insetLeft=insets.getSystemWindowInsetLeft();insetTop=insets.getSystemWindowInsetTop();insetRight=insets.getSystemWindowInsetRight();insetBottom=insets.getSystemWindowInsetBottom();}
             view.setPadding(left+insetLeft,top+insetTop,right+insetRight,bottom+insetBottom);return insets;
         });
-        scroll.addView(page); setContentView(scroll); label(title,28,true); label("Clinic Desk · staff workspace",14,false);
+        scroll.addView(page); setContentView(scroll);
+        LinearLayout heading=card();TextView brand=new TextView(this);brand.setText("CLINIC DESK  /  STAFF WORKSPACE");brand.setTextColor(teal);brand.setTextSize(11);brand.setTypeface(null,1);
+        TextView pageTitle=new TextView(this);pageTitle.setText(title);pageTitle.setTextColor(ink);pageTitle.setTextSize(26);pageTitle.setTypeface(null,1);
+        heading.addView(brand);heading.addView(pageTitle);LinearLayout.LayoutParams hp=(LinearLayout.LayoutParams)heading.getLayoutParams();hp.bottomMargin=dp(16);heading.setLayoutParams(hp);
     }
     private void showLogin() {
         base("Welcome back"); EditText address=field("Service address", "http://10.0.2.2:8080"); EditText username=field("Staff username",""); EditText password=field("Password",""); password.setInputType(129);
@@ -54,18 +58,27 @@ public class MainActivity extends Activity {
         page.addView(signIn); label("Use the clinic service address and your staff account.",13,false);
     }
     private void showHome(String staff) {
-        base("Clinic Desk"); label("Signed in as "+staff+" · "+activeRole,14,false);
+        base("Good day, "+staff); label("Your clinic workspace is ready. Choose a task to get started.",14,false);
         Button patients=button("Patients"); Button appointments=button("Appointments"); Button clinical=button("Consultations");Button pharmacy=button("Pharmacy and stock");Button billing=button("Billing");Button administration=button("Administration");Button password=button("Change password");Button signOut=button("Sign out");
         patients.setOnClickListener(v->showPatients()); appointments.setOnClickListener(v->showAppointments());clinical.setOnClickListener(v->showClinical());pharmacy.setOnClickListener(v->showPharmacy());billing.setOnClickListener(v->showBilling());administration.setOnClickListener(v->showAdministration());password.setOnClickListener(v->showPassword());signOut.setOnClickListener(v->{service="";auth="";activeUser="";activeUsername="";activeRole="";showLogin();});
-        if(hasRole("ADMIN","RECEPTIONIST","BILLING"))page.addView(patients);
-        if(hasRole("ADMIN","RECEPTIONIST","DOCTOR"))page.addView(appointments);
-        if(hasRole("ADMIN","DOCTOR"))page.addView(clinical);
-        if(hasRole("ADMIN","PHARMACIST"))page.addView(pharmacy);
-        if(hasRole("ADMIN","BILLING"))page.addView(billing);
-        if(hasRole("ADMIN"))page.addView(administration);
-        page.addView(password);
-        page.addView(signOut);
-        output=new TextView(this); output.setTextColor(ink); output.setTextSize(14); output.setPadding(0,dp(18),0,dp(12)); page.addView(output);
+        GridLayout shortcuts=new GridLayout(this);shortcuts.setColumnCount(2);shortcuts.setUseDefaultMargins(false);LinearLayout.LayoutParams gp=new LinearLayout.LayoutParams(-1,-2);gp.topMargin=dp(12);page.addView(shortcuts,gp);
+        if(hasRole("ADMIN","RECEPTIONIST","BILLING"))addTile(shortcuts,patients);
+        if(hasRole("ADMIN","RECEPTIONIST","DOCTOR"))addTile(shortcuts,appointments);
+        if(hasRole("ADMIN","DOCTOR"))addTile(shortcuts,clinical);
+        if(hasRole("ADMIN","PHARMACIST"))addTile(shortcuts,pharmacy);
+        if(hasRole("ADMIN","BILLING"))addTile(shortcuts,billing);
+        if(hasRole("ADMIN"))addTile(shortcuts,administration);
+        addTile(shortcuts,password);addTile(shortcuts,signOut);
+        output=new TextView(this); output.setTextColor(ink); output.setTextSize(14); output.setPadding(dp(14),dp(14),dp(14),dp(14));output.setBackground(rounded(Color.WHITE,line,12));LinearLayout.LayoutParams op=new LinearLayout.LayoutParams(-1,-2);op.topMargin=dp(18);page.addView(output,op);
+        loadHomeSummary();
+    }
+    private void loadHomeSummary(){
+        if(hasRole("ADMIN","RECEPTIONIST","DOCTOR")){
+            String day=java.time.LocalDate.now(java.time.ZoneId.of("Asia/Kolkata")).toString();
+            request("GET","/api/appointments?date="+day,null,text->{try{org.json.JSONArray visits=new org.json.JSONArray(text);int arrived=0,done=0;for(int i=0;i<visits.length();i++){String state=visits.getJSONObject(i).optString("status");if("CHECKED_IN".equals(state))arrived++;if("COMPLETED".equals(state))done++;}output.setText("Today at the clinic\n"+visits.length()+" appointments  ·  "+arrived+" checked in  ·  "+done+" completed");}catch(Exception ignored){output.setText("Today's clinic summary is unavailable.");}},text->output.setText("Today's appointments could not be loaded. Check your connection."));
+        }
+        if(hasRole("ADMIN","PHARMACIST"))request("GET","/api/inventory/alerts",null,text->{try{JSONObject alerts=new JSONObject(text);org.json.JSONArray low=alerts.optJSONArray("lowStock"),expiring=alerts.optJSONArray("expiringWithin30Days");int count=(low==null?0:low.length())+(expiring==null?0:expiring.length());String current=output.getText().toString();output.setText((current.isBlank()?"Clinic snapshot":current)+"\nMedicine alerts  ·  "+count+" items need review");}catch(Exception ignored){}},text->{});
+        if(hasRole("ADMIN"))request("GET","/api/admin/reports/daily",null,text->{try{JSONObject report=new JSONObject(text);String current=output.getText().toString();output.setText((current.isBlank()?"Clinic snapshot":current)+"\nCollected today  ·  ₹"+report.optString("netPaymentsReceived","0.00"));}catch(Exception ignored){}},text->{});
     }
     private void showPatients() {
         base("Patients");
@@ -187,9 +200,12 @@ public class MainActivity extends Activity {
     private String formatResponse(String raw){if(raw==null||raw.isBlank())return "Done.";try{org.json.JSONArray rows=new org.json.JSONArray(raw);if(rows.length()==0)return "No matching records.";StringBuilder out=new StringBuilder();for(int i=0;i<rows.length();i++){if(i>0)out.append("\n\n");out.append(i+1).append(". ").append(formatObject(rows.getJSONObject(i)));}return out.toString();}catch(Exception ignored){}try{return formatObject(new JSONObject(raw));}catch(Exception ignored){return raw;}}
     private String formatObject(JSONObject object){StringBuilder out=new StringBuilder();java.util.Iterator<String> keys=object.keys();while(keys.hasNext()){String key=keys.next();Object value=object.opt(key);if(value==null||value==JSONObject.NULL||value.toString().isBlank())continue;if(out.length()>0)out.append("\n");out.append(key.replaceAll("([a-z])([A-Z])","$1 $2").replace('_',' ')).append(": ").append(value);}return out.length()==0?"Done.":out.toString();}
     private String readBody(InputStream input) throws IOException { if(input==null)return "";try(InputStream in=input;ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] buffer=new byte[4096];int count;while((count=in.read(buffer))!=-1)out.write(buffer,0,count);return new String(out.toByteArray(),StandardCharsets.UTF_8);} }
-    private EditText field(String hint,String value){EditText e=new EditText(this);e.setSingleLine(true);e.setHint(hint);e.setText(value);e.setTextColor(ink);e.setHintTextColor(Color.GRAY);page.addView(e,new LinearLayout.LayoutParams(-1,dp(54)));return e;}
+    private EditText field(String hint,String value){EditText e=new EditText(this);e.setSingleLine(true);e.setHint(hint);e.setText(value);e.setTextSize(15);e.setPadding(dp(14),0,dp(14),0);e.setTextColor(ink);e.setHintTextColor(Color.rgb(130,145,157));e.setBackground(rounded(Color.WHITE,line,8));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(54));lp.bottomMargin=dp(5);page.addView(e,lp);return e;}
     private EditText multilineField(String hint){EditText e=new EditText(this);e.setSingleLine(false);e.setMinLines(3);e.setMaxLines(8);e.setGravity(android.view.Gravity.TOP);e.setHint(hint);e.setTextColor(ink);e.setHintTextColor(Color.GRAY);page.addView(e,new LinearLayout.LayoutParams(-1,dp(120)));return e;}
-    private Button button(String text){Button b=new Button(this);b.setText(text);b.setTextColor(Color.WHITE);b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(teal));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(50));lp.topMargin=dp(8);b.setLayoutParams(lp);return b;}
+    private Button button(String text){Button b=new Button(this);b.setText(text);b.setAllCaps(false);b.setTextSize(14);b.setTypeface(null,1);b.setTextColor(Color.WHITE);b.setBackground(rounded(teal,teal,9));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(50));lp.topMargin=dp(8);b.setLayoutParams(lp);return b;}
+    private LinearLayout card(){LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(18),dp(16),dp(18),dp(16));box.setBackground(rounded(Color.WHITE,line,14));box.setElevation(dp(1));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.bottomMargin=dp(12);box.setLayoutParams(lp);page.addView(box);return box;}
+    private GradientDrawable rounded(int fill,int stroke,int radius){GradientDrawable shape=new GradientDrawable();shape.setColor(fill);shape.setCornerRadius(dp(radius));shape.setStroke(dp(1),stroke);return shape;}
+    private void addTile(GridLayout grid,Button item){GridLayout.LayoutParams lp=new GridLayout.LayoutParams();lp.width=0;lp.height=dp(72);lp.columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f);lp.setMargins(dp(4),dp(4),dp(4),dp(4));item.setLayoutParams(lp);grid.addView(item);}
     private void label(String text,int size,boolean bold){TextView t=new TextView(this);t.setText(text);t.setTextSize(size);t.setTextColor(ink);if(bold)t.setTypeface(null,1);LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.bottomMargin=dp(8);page.addView(t,p);}
     private int dp(int value){return (int)(value*getResources().getDisplayMetrics().density+.5f);}
     @Override protected void onDestroy(){super.onDestroy();worker.shutdownNow();}
