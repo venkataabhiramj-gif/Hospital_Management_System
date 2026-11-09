@@ -2,7 +2,7 @@
 
 ## Status
 
-Planning brief, based on the current project discussion. The repository contains no application source code yet. Requirements and architecture remain open to refinement before implementation.
+Implementation in progress. A Spring Boot API, JavaFX Windows client, Android Java client, database migrations, and Compose deployment template have been added. The API and Windows client compile, and the Android Java client compiles. A clean H2 database has applied all six migrations, and the synthetic staff-to-payment API workflow has been exercised. Interactive client journeys and deployment still need validation. See [operations](OPERATIONS.md) for current limits and [the assignment demo sequence](ASSIGNMENT_DEMO.md).
 
 ## Product direction
 
@@ -36,16 +36,16 @@ These are agreed working defaults for requirements discovery. They still need re
 
 ### Patient registration
 
-- Search for existing patients using more than one available detail, such as facility ID, name, date of birth, or contact number.
+- Search for existing patients using facility ID, name, exact date of birth, or normalized contact number.
 - If there is no likely match, create a patient record with a facility-generated patient number.
 - Collect only the information the facility needs to identify and contact the patient. Aadhaar or ABHA is not a required identifier for the first release.
-- Flag possible duplicates for authorized staff review; do not merge records automatically.
+- Compare names and normalized phone numbers during registration and demographic correction, require staff to review likely matches and record a reason before creating or changing a record, and preserve that review for administrators; never merge records automatically. Administrators may perform an explicit, reasoned merge after confirming the identities.
 - Make demographic corrections traceable.
 
 ### Appointments and check-in
 
-- Staff can book, reschedule, or cancel an appointment and check a patient in.
-- Track appointment states: booked, checked in, in progress, completed, cancelled, and no-show.
+- Staff can book, reschedule, cancel with a reason, check a patient in, and record a no-show after the scheduled visit window.
+- Track appointment states: booked, checked in, in progress, completed, cancelled, and no-show, with an attributed status history.
 - Prevent overlapping appointments for the same doctor.
 - Support walk-ins as a distinct visit type.
 
@@ -64,11 +64,12 @@ These are agreed working defaults for requirements discovery. They still need re
 - A prescription does not reduce stock. Stock changes when pharmacy staff record the actual dispensing.
 - Link dispensed quantities to the prescription, patient visit, and batch.
 - Prevent dispensing from expired or empty batches. Where more than one valid batch is available, suggest the batch that expires soonest.
-- A medicine substitution requires approval from an authorized clinician. Rules for partial dispensing still need to be defined.
+- A medicine substitution requires approval from an authorized clinician. Partial fills are allowed and record the actual quantity dispensed; staff review remaining quantities before invoicing. Once an invoice is created, further dispensing for that visit is blocked so the bill remains consistent with the stock movement.
 
 ### Billing
 
 - Build the bill from the facility's configured charges and items actually dispensed for the visit.
+- Provide an itemized invoice view with amount due and the related payment/receipt history.
 - Preserve the price used on an invoice if the facility later changes its price list.
 - Track payment status, including partial payment, and issue a unique receipt for each payment.
 - Require authorization and an audit trail for corrections, refunds, and voided bills.
@@ -90,23 +91,30 @@ Detailed fields, business rules, and report formats need workflow review before 
 
 - Required and optional registration fields, and workflows for children, emergency cases, and patients whose identity is not yet known.
 - Consultation template, vital-sign fields, and how the facility reviews and corrects finalized records.
-- Rules for partial dispensing, medicine returns, and any regulated-medicine workflows.
+- Patient-return disposition rules and any regulated-medicine workflows.
 - Facility billing policy, including tax configuration, invoice corrections, and refund approvals.
 - Connectivity assumptions and what staff can safely do during a service outage.
 
 ## Platform and architecture direction
 
-The current proposal is:
+The selected initial architecture is:
 
 - A Java backend service as the shared source of business rules and data access.
 - A native Android client written in Java.
 - A Windows desktop client written in Java using JavaFX.
-- A central relational database, with PostgreSQL as the leading candidate.
+- H2 file storage for local development and PostgreSQL for the Compose deployment template.
 - Client applications communicate with the service; they do not connect directly to the database.
 
-This is a proposed direction, not an implemented or final architecture. We will validate the exact Java version, frameworks, database, build tooling, deployment model, and connectivity assumptions before creating the application skeleton. Android supports a subset of standard JDK APIs, so shared code and dependencies must be checked for Android compatibility.
+The architecture is implemented as an early baseline, but has not completed end-to-end, deployment, security, or clinical workflow validation. Android supports a subset of standard JDK APIs, so its application is separately implemented; the debug and unsigned release APKs currently compile.
 
-Java-only means Java for application code. Android resources, SQL, build configuration, and other platform metadata use their respective supporting formats and will be explained as they are introduced.
+## Java concepts represented in the application
+
+- **Object-oriented design:** patient and workflow data use Java classes and records, with responsibilities separated across API, service, and client packages.
+- **Interfaces:** `PatientDuplicateReviewService` defines the patient-matching contract, and `JdbcPatientDuplicateReviewService` implements it using the clinic database. The controller depends on the interface through constructor injection.
+- **Exception handling:** request validation, business-rule exceptions, database conflicts, and unexpected request values are translated into consistent API errors by `ApiExceptionHandler`.
+- **Database connectivity:** the Java service uses Spring JDBC (`JdbcTemplate`) with parameterized SQL. Flyway migrations define and evolve the relational schema.
+
+Java-only means Java for application code. Android resources, SQL, build configuration, and other platform metadata use their respective supporting formats. The requested code and tool walkthroughs will be consolidated in the final learning guide after implementation.
 
 ## Quality and deployment requirements to investigate
 

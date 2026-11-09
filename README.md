@@ -1,7 +1,12 @@
 # 🏥 ApexCare Clinical OS & Healthcare Information System (HIS)
-### Enterprise Outpatient EHR, Clinical Scheduling & Revenue Cycle Management
+### Outpatient EHR, Clinical Scheduling, Revenue Cycle Management & Multi-Platform Portal
 
-ApexCare is a production-oriented, full-stack outpatient Healthcare Information System built entirely using **Java (JDK 17)** with an embedded concurrent HTTP server, **secure JDBC relational persistence**, and a responsive clinical web interface.
+ApexCare is a multi-platform Healthcare Information System built entirely using **Java (JDK 17)**. It connects a centralized Spring Boot REST API and relational database with three unified clients:
+- **🖥️ Desktop Application (`:desktop`)**: Windows desktop client (`ClinicDesk`) with role-aware navigation, in-app stock & expiry alerts, and dashboard snapshots.
+- **📱 Android Application (`:android`)**: Native Android mobile client for point-of-care clinical management.
+- **🌐 Web Portal (`webapp/`)**: Responsive clinical web interface for outpatient registration, appointment booking, clinical encounters, billing, and EHR management.
+
+All three platforms connect to the **same centralized database** (H2 for local development, PostgreSQL for production), ensuring any change made in one application is instantly reflected across desktop, mobile, and web.
 
 ---
 
@@ -11,58 +16,42 @@ ApexCare is a production-oriented, full-stack outpatient Healthcare Information 
 | :--- | :--- |
 | **🧑‍⚕️ Master Patient Index (MPI)** | Centralized outpatient registration, unique Medical Record Numbers (MRN), demographic intake, emergency contact kin-mapping, and real-time query filtering. |
 | **👨‍⚕️ Clinician Staff Directory** | Medical credentials tracking, clinical department appointments, OPD consultation fee scheduling, and shift availability windows. |
-| **📅 Outpatient Scheduling & Encounters** | Multi-specialty booking engine with **transactional double-booking conflict prevention** (`AppointmentConflictException`), check-in status, and encounter completion tracking. |
-| **💳 Revenue Cycle Management (RCM)** | Point-of-care billing engine implementing the formal `Billable` financial contract, dynamic multi-tier discount application, statutory healthcare tax (GST) auditing, and printable tax receipts. |
+| **📅 Outpatient Scheduling & Encounters** | Multi-specialty booking engine with **transactional double-booking conflict prevention**, check-in status, and encounter completion tracking. |
+| **💳 Revenue Cycle Management (RCM)** | Point-of-care billing engine implementing formal financial contracts, dynamic multi-tier discount application, statutory healthcare tax (GST) auditing, and printable tax receipts. |
 | **📋 Electronic Health Records (EHR)** | Clinical progress notes, ICD-10 indication tracking, structured prescription dosing regimens (Rx), diagnostic lab/radiology orders, and longitudinal chart reviews. |
-
----
-
-## 🏛️ Java Engineering Architecture & OOP Principles
-
-1. **Object-Oriented Programming (OOP) Hierarchy**:
-   - **Abstraction:** The abstract base class `Person` encapsulates standard demographic traits (`id`, `name`, `phone`, `email`, `age`, `gender`) and enforces the polymorphic contract `public abstract String getRole()`.
-   - **Encapsulation:** Private attributes guarded by strict validation rules within mutator methods (e.g., age boundaries $0 \le \text{age} \le 130$, non-null strings).
-   - **Inheritance:** `Patient extends Person` and `Doctor extends Person` derive foundational state while encapsulating department-specific clinical attributes.
-   - **Polymorphism:** Runtime polymorphism via method overriding (`getRole()`, `toString()`) and compile-time polymorphism via constructor and query method overloading.
-2. **Interface Abstraction & Decoupling**:
-   - `Billable`: Interface defining financial calculation contracts (`calculateSubtotal`, `calculateDiscountAmount`, `calculateTaxAmount`, `calculateFinalTotal`).
-   - Data Access Object (DAO) Contracts (`PatientDAO`, `DoctorDAO`, `AppointmentDAO`, `BillingDAO`, `MedicalRecordDAO`): Complete isolation between business rules and data storage engines.
-3. **Domain Exception Handling**:
-   - Strict custom exception hierarchy extending `HospitalException`:
-     - `AppointmentConflictException` (Physician schedule collision $\rightarrow$ HTTP 409 Conflict)
-     - `InvalidBillingException` (Financial computation anomaly $\rightarrow$ HTTP 400 Bad Request)
-     - `PatientNotFoundException` & `DoctorNotFoundException` (Entity query miss $\rightarrow$ HTTP 404 Not Found)
-     - `DatabaseException` (JDBC encapsulation $\rightarrow$ HTTP 500 Internal Error)
-4. **Relational Database Connectivity (JDBC)**:
-   - **100% Parameterized Queries:** Universal execution via `PreparedStatement` eliminating SQL injection vectors.
-   - **Deterministic Resource Management:** Strict `try-with-resources` ensuring zero connection, statement, or cursor leaks.
-   - **Thread-Safe Singleton Manager:** `DatabaseConfig` manages database initialization and automatic table schema creation.
 
 ---
 
 ## 🚀 Execution Instructions
 
-### Windows (One-Click)
-1. Double-click `run.bat` (automatically compiles source files if needed and boots the HTTP server).
-2. Open your web browser and navigate to:
-   ```
-   http://localhost:8088
-   ```
+### 1. Start the Centralized Server (`:server`)
+Set an initial administrator password (min 12 characters) and run the Spring Boot API service:
+```powershell
+$env:HMS_ADMIN_PASSWORD = 'choose-a-unique-password-of-at-least-12-characters'
+.\gradlew.bat :server:bootRun
+```
+*The server boots on `http://localhost:8080`, initializes the database migrations (`data/hospital.mv.db`), and serves the REST API and the integrated web portal at `http://localhost:8080/`.*
 
-### Cross-Platform CLI (Windows / Linux / macOS)
-1. **Compile**:
-   ```bash
-   javac -cp "lib/*" -d bin src/com/hospital/**/*.java src/com/hospital/*.java
-   ```
-2. **Launch**:
-   ```bash
-   java -cp "bin;lib/*" com.hospital.Main 8088
-   ```
-   *(On macOS / Linux, use colon delimiter: `java -cp "bin:lib/*" com.hospital.Main 8088`)*
-3. **Access**:
-   ```
-   http://localhost:8088
-   ```
+### 2. Start the Windows Desktop App (`:desktop`)
+In a separate terminal:
+```powershell
+.\gradlew.bat :desktop:run
+```
+
+To create a portable Windows package with its own Java runtime:
+```powershell
+.\gradlew.bat :desktop:packageWindowsApp
+```
+
+### 3. Open the Web Portal
+With the server running, navigate to:
+```
+http://localhost:8080/
+```
+The web portal communicates directly with the unified `:server` API using the same database.
+
+### 4. Android Client (`:android`)
+The native Android project is located under `android/`. It connects to the unified API at `http://10.0.2.2:8080/api/` in Android Emulator or your server's LAN IP on physical devices.
 
 ---
 
@@ -70,58 +59,33 @@ ApexCare is a production-oriented, full-stack outpatient Healthcare Information 
 
 ```
 Hospital_Management_System/
-├── src/
-│   └── com/hospital/
-│       ├── Main.java                        # Server Entry Point (http://localhost:8088)
-│       ├── config/
-│       │   └── DatabaseConfig.java          # JDBC Connection Manager (Singleton Pattern)
-│       ├── exceptions/                      # Custom Domain Exception Hierarchy
-│       │   ├── HospitalException.java       # Base Checked Exception
-│       │   ├── PatientNotFoundException.java
-│       │   ├── DoctorNotFoundException.java
-│       │   ├── AppointmentConflictException.java
-│       │   ├── InvalidBillingException.java
-│       │   └── DatabaseException.java
-│       ├── models/                          # Core Domain Entities (OOP)
-│       │   ├── Person.java                  # Abstract Base Class (Abstraction & Encapsulation)
-│       │   ├── Patient.java                 # Subclass of Person (Inheritance)
-│       │   ├── Doctor.java                  # Subclass of Person (Inheritance)
-│       │   ├── Appointment.java             # Entity with scheduling state
-│       │   ├── Bill.java                    # Implements Billable interface
-│       │   └── MedicalRecord.java           # Longitudinal EHR record
-│       ├── interfaces/                      # Formal Interface Contracts
-│       │   ├── Billable.java                # Financial calculation interface
-│       │   ├── PatientDAO.java              # Patient CRUD contract
-│       │   ├── DoctorDAO.java               # Doctor CRUD contract
-│       │   ├── AppointmentDAO.java          # Scheduling contract
-│       │   ├── BillingDAO.java              # Invoicing contract
-│       │   └── MedicalRecordDAO.java        # Health record contract
-│       ├── dao/                             # Parameterized JDBC Implementations
-│       │   ├── PatientDAOImpl.java
-│       │   ├── DoctorDAOImpl.java
-│       │   ├── AppointmentDAOImpl.java
-│       │   ├── BillingDAOImpl.java
-│       │   └── MedicalRecordDAOImpl.java
-│       └── web/                             # Web Server & Controllers
-│           ├── ApiHandler.java              # REST API & Form Submission Controller
-│           ├── JsonUtils.java               # Pure-Java JSON serialization utility
-│           └── StaticFileHandler.java       # Static Web Asset Server
-├── webapp/                                  # Responsive Healthcare UI
+├── server/                                  # Spring Boot REST API & Central Database
+│   ├── src/main/java/com/hospital/management/server/
+│   │   ├── api/WorkflowController.java      # Unified REST API endpoints
+│   │   ├── config/SecurityConfiguration.java# Spring Security & Web asset configuration
+│   │   └── service/                         # Clinical business logic & duplicate review
+│   └── src/main/resources/
+│       ├── application.yml                  # H2 Database configuration (./data/hospital)
+│       └── db/migration/                    # Flyway migrations (V1 to V6)
+├── desktop/                                 # Windows JavaFX Desktop Application (ClinicDesk)
+│   └── src/main/java/com/hospital/management/desktop/
+├── android/                                 # Native Android Application
+│   └── app/src/main/java/com/hospital/management/android/
+├── webapp/                                  # Responsive Web Interface (HTML5/CSS3/Vanilla JS)
 │   ├── index.html                           # Operations Dashboard
 │   ├── patients.html                        # Master Patient Index (MPI)
 │   ├── doctors.html                         # Medical Staff Roster
 │   ├── appointments.html                   # Outpatient Scheduling & Check-in
 │   ├── billing.html                         # RCM & Point-of-Care Invoicing
 │   ├── records.html                         # Electronic Health Records (EHR)
-│   ├── css/
-│   │   └── style.css                        # Design System & Clinical Tokens
-│   └── js/
-│       └── app.js                           # Frontend controller & API bridge
-├── lib/
-│   └── sqlite-jdbc.jar                      # Embedded JDBC Driver (Auto-downloaded on build)
-├── docs/
-│   ├── CODE_EXPLANATION.md                  # Comprehensive line-by-line code & architecture guide
-│   └── PROJECT_BRIEF.md                     # Outpatient system product brief
-├── build.bat                                # Windows build script
-└── run.bat                                  # Windows launch script
+│   ├── css/style.css                        # Design System & Clinical Tokens
+│   └── js/app.js                            # Frontend API bridge to unified server
+├── docs/                                    # Documentation & Guides
+│   ├── ASSIGNMENT_DEMO.md
+│   ├── CODE_EXPLANATION.md                  # Comprehensive line-by-line explanation
+│   ├── DEMO_DATA.md
+│   └── OPERATIONS.md
+├── build.gradle                             # Root Gradle configuration
+├── settings.gradle
+└── compose.yaml                             # Docker Compose for PostgreSQL & Server
 ```

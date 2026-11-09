@@ -1,0 +1,10 @@
+<resources>
+    <style name="ClinicTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:colorAccent">@color/brand_teal</item>
+        <item name="android:statusBarColor">#EFF5F4</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">#EFF5F4</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+</resources>

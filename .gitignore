@@ -3,10 +3,18 @@
 bin/
 out/
 dist/
+build/
+**/build/
+.gradle/
+.gradle-user/
+local.properties
+.env
+data/
 
 # Database files
 *.db
 *.db-journal
+*.mv.db
 
 # Log files
 *.log
@@ -14,7 +22,6 @@ hs_err_pid*
 replay_pid*
 
 # Package & Binary Files (downloaded automatically on build)
-*.jar
 *.war
 *.nar
 *.ear
@@ -23,6 +30,10 @@ replay_pid*
 *.rar
 lib/*.jar
 
+# Gradle wrapper executables are required to build the project on other machines.
+!gradle/wrapper/gradle-wrapper.jar
+!android/gradle/wrapper/gradle-wrapper.jar
+
 # IDE specific files
 .idea/
 *.iml
@@ -30,3 +41,4 @@ lib/*.jar
 .project
 .classpath
 .settings/
+
