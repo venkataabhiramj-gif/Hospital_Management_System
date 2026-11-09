@@ -28,6 +28,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/", "/index.html", "/*.html", "/css/**", "/js/**", "/favicon.ico", "/error").permitAll()
                         .requestMatchers("/api/health", "/api/dashboard").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/patient/**", "/api/doctor/**").permitAll()
                         .requestMatchers("/api/bills", "/api/bills/**").permitAll()
                         .requestMatchers("/api/records", "/api/records/**").permitAll()
                         .requestMatchers("/api/patients", "/api/patients/**").permitAll()

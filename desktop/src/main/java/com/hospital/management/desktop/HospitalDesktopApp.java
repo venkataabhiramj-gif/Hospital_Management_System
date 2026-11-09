@@ -33,7 +33,7 @@ public class HospitalDesktopApp extends Application {
 
     @Override public void start(Stage stage) {
         primaryStage=stage;
-        stage.setTitle("Clinic Desk");
+        stage.setTitle("ApexCare ClinicDesk — Memorial Hospital Clinical System");
         stage.setMinWidth(920); stage.setMinHeight(640);
         Scene scene = new Scene(login(stage), 1180, 780);
         scene.getStylesheets().add(getClass().getResource("/clinic.css").toExternalForm());
@@ -45,8 +45,8 @@ public class HospitalDesktopApp extends Application {
         TextField host = new TextField("http://localhost:8088"); host.setPromptText("Clinic service address");
         TextField username = new TextField(); username.setPromptText("Staff username");
         PasswordField password = new PasswordField(); password.setPromptText("Password");
-        Label title = new Label("Clinic Desk"); title.getStyleClass().add("login-title");
-        Label hint = new Label("A calm, clear workspace for your clinic team"); hint.getStyleClass().add("muted");
+        Label title = new Label("ApexCare Memorial Hospital"); title.getStyleClass().add("login-title");
+        Label hint = new Label("ClinicDesk Outpatient Workspace · Facility 01"); hint.getStyleClass().add("muted");
         Button connect = new Button("Sign in"); connect.setDefaultButton(true);
         Label message = new Label();
         connect.setOnAction(e -> { String serviceAddress=host.getText(),user=username.getText().trim(),secret=password.getText();connect.setDisable(true);message.setText("Connecting…");
@@ -57,11 +57,14 @@ public class HospitalDesktopApp extends Application {
     }
 
     private BorderPane workspace() {
-        Label brand = new Label("Clinic Desk"); brand.getStyleClass().add("brand");
+        VBox brandBox = new VBox(2);
+        Label brand = new Label("ApexCare Memorial Hospital"); brand.getStyleClass().add("brand");
+        Label subBrand = new Label("ClinicDesk Outpatient System · Facility 01"); subBrand.getStyleClass().add("muted");
+        brandBox.getChildren().addAll(brand, subBrand);
         Label account = new Label(activeName + "  ·  " + activeRole.replace('_',' ')); account.getStyleClass().add("muted");
         Button changePassword=new Button("Change password");changePassword.setOnAction(e->changePassword());
         Button signOut=new Button("Sign out");signOut.setOnAction(e->{if(dashboardRefresh!=null)dashboardRefresh.stop();api.clearCredentials();activeName="";activeUsername="";activeRole="";primaryStage.getScene().setRoot(login(primaryStage));});
-        HBox header = new HBox(16,brand,new Region(),account,changePassword,signOut); HBox.setHgrow(header.getChildren().get(1),Priority.ALWAYS); header.setPadding(new Insets(18,28,18,28)); header.getStyleClass().add("topbar");
+        HBox header = new HBox(16,brandBox,new Region(),account,changePassword,signOut); HBox.setHgrow(header.getChildren().get(1),Priority.ALWAYS); header.setPadding(new Insets(18,28,18,28)); header.getStyleClass().add("topbar");
         navigation = new VBox(7); navigation.setPadding(new Insets(22,14,18,14)); navigation.getStyleClass().add("sidebar"); navigation.setPrefWidth(218);
         Label navTitle = new Label("CLINIC WORKSPACE"); navTitle.getStyleClass().add("nav-caption"); navigation.getChildren().add(navTitle);
         pageArea = new VBox(18); pageArea.setPadding(new Insets(30,34,26,34)); pageArea.getStyleClass().add("page-area");

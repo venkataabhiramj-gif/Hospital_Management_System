@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ApexCare Clinical OS — Outpatient Healthcare Information System</title>
+  <title>ApexCare Memorial Hospital — ClinicDesk Healthcare System</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -11,22 +11,22 @@
   <aside class="sidebar">
     <div class="sidebar-brand">
       <div class="brand-symbol">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
           <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
         </svg>
       </div>
       <div class="brand-text">
         <h2>ApexCare</h2>
-        <span>Clinical OS</span>
+        <span>ClinicDesk HIS</span>
       </div>
     </div>
 
-    <div class="nav-section-label">Core Operations</div>
+    <div class="nav-section-label">Clinic Workspace</div>
     <ul class="sidebar-nav">
       <li class="nav-item">
         <a href="/" class="nav-link active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
-          <span>Operations Dashboard</span>
+          <span>Operations Overview</span>
         </a>
       </li>
       <li class="nav-item">
@@ -64,33 +64,29 @@
     <div class="sidebar-facility-badge">
       <div class="facility-dot"></div>
       <div class="facility-meta">
-        <h4>Apex Memorial (Facility 01)</h4>
-        <p>OPD Subsystem • Shift 1 Active</p>
+        <h4>ApexCare Memorial (Fac 01)</h4>
+        <p>Unified DB: data/hospital.mv.db</p>
       </div>
     </div>
   </aside>
 
-  <!-- Main Content Wrapper -->
+  <!-- Main Viewport -->
   <div class="main-wrapper">
     <header class="top-bar">
       <div class="top-bar-left">
         <div class="page-heading">
-          <h1>Clinical Operations Overview</h1>
-          <p>Real-time patient census, provider staffing, and encounter scheduling</p>
+          <h1 id="topbar-page-title">Clinical Operations Overview</h1>
+          <p id="topbar-page-desc">Real-time patient census, provider staffing, and encounter scheduling</p>
         </div>
       </div>
       <div class="top-bar-right">
         <div class="shift-indicator">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          <span>OPD Shift 08:00 – 16:00 IST</span>
+          <span>OPD Shift 09:00 – 17:00 IST</span>
         </div>
         <a href="/appointments.html" class="btn btn-primary">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Schedule Encounter
-        </a>
-        <a href="/patients.html" class="btn btn-secondary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-          Register Patient
         </a>
       </div>
     </header>
@@ -98,106 +94,247 @@
     <main class="content-container">
       <div id="global-alert" class="alert"></div>
 
-      <!-- Live Clinical Metric Cards -->
-      <section class="metrics-grid">
-        <div class="stat-card">
-          <div class="stat-meta">
-            <p>Active Patient Registry</p>
-            <h3 id="stat-patients">--</h3>
-            <span class="stat-sub">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline></svg>
-              Master Patient Index Verified
-            </span>
-          </div>
-          <div class="stat-icon blue">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
-          </div>
+      <!-- ============================================== -->
+      <!-- PATIENT REDIRECT BANNER (If user is a patient) -->
+      <!-- ============================================== -->
+      <div id="patient-redirect-banner" style="display: none;">
+        <div class="card" style="padding: 32px; text-align: center; border-left: 4px solid var(--primary);">
+          <div class="user-avatar" style="width: 52px; height: 52px; font-size: 20px; margin: 0 auto 16px;">AR</div>
+          <h2 style="color: var(--brand-navy); font-size: 22px;">Welcome to Your Patient Health Portal</h2>
+          <p style="color: var(--text-muted); max-width: 500px; margin: 8px auto 20px;">
+            You are logged in as an outpatient. Access your scheduled visits, doctor prescriptions, clinical notes, and official tax receipts in the dedicated patient services view.
+          </p>
+          <a href="/patient-portal.html" class="btn btn-primary" style="padding: 12px 24px; font-size: 14px;">
+            Open Patient Health Portal →
+          </a>
         </div>
+      </div>
 
-        <div class="stat-card">
-          <div class="stat-meta">
-            <p>Attending Clinicians</p>
-            <h3 id="stat-doctors">--</h3>
-            <span class="stat-sub">Across 5 OPD Specialties</span>
-          </div>
-          <div class="stat-icon emerald">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-meta">
-            <p>Scheduled Encounters</p>
-            <h3 id="stat-appointments">--</h3>
-            <span class="stat-sub">Zero Double-Booking Conflicts</span>
-          </div>
-          <div class="stat-icon amber">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-meta">
-            <p>Realized Collections</p>
-            <h3 id="stat-revenue">--</h3>
-            <span class="stat-sub">Point-of-Care Settled Invoices</span>
-          </div>
-          <div class="stat-icon indigo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
-          </div>
-        </div>
-      </section>
-
-      <!-- Today's Outpatient Encounters -->
-      <section class="card">
-        <div class="card-header">
-          <div class="card-header-left">
-            <h2>Current Outpatient Encounters Schedule</h2>
-            <span class="badge-counter">Today</span>
-          </div>
-          <a href="/appointments.html" class="btn btn-secondary btn-sm">Full Appointment Roster</a>
-        </div>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th>Encounter ID</th>
-                <th>Patient Details</th>
-                <th>Attending Clinician</th>
-                <th>Encounter Date</th>
-                <th>Time Window</th>
-                <th>Clinical Status</th>
-              </tr>
-            </thead>
-            <tbody id="recent-appointments-tbody">
-              <tr><td colspan="6" style="text-align:center; padding: 24px; color: #94a3b8;">Connecting to clinical telemetry service...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Clinical Governance & Architecture Assurance -->
-      <section class="card" style="border-left: 3px solid #0284c7;">
-        <div class="card-header">
-          <h2>Enterprise HIS Governance & System Specifications</h2>
-        </div>
-        <div class="card-body" style="font-size: 12.5px; color: #475569; line-height: 1.8;">
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+      <!-- ============================================== -->
+      <!-- DOCTOR & CLINICAL STAFF OPD DESK VIEW          -->
+      <!-- ============================================== -->
+      <div id="doctor-opd-view" style="display: none;">
+        <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);">
+          <div class="card-body" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <strong style="color:#0f172a; display:block; margin-bottom:4px;">Secure Parameterized JDBC Persistence</strong>
-              All database read/write queries execute exclusively via compiled <code>PreparedStatement</code> instances. Eliminates SQL injection vulnerabilities and ensures ACID transactional integrity.
+              <h2 id="doctor-welcome-title" style="font-size: 18px; color: var(--brand-navy); font-weight: 800;">
+                Dr. Kavya Menon — OPD Clinical Encounter Desk
+              </h2>
+              <p id="doctor-welcome-meta" style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">
+                Specialty: General Medicine & Cardiology · Facility 01 Outpatient Room 03
+              </p>
             </div>
-            <div>
-              <strong style="color:#0f172a; display:block; margin-bottom:4px;">Strict Double-Booking Prevention Logic</strong>
-              The appointment scheduling engine validates physician schedules at the transactional DAO layer using <code>AppointmentConflictException</code> prior to commit.
-            </div>
-            <div>
-              <strong style="color:#0f172a; display:block; margin-bottom:4px;">Contract-Driven Revenue Cycle Engine</strong>
-              Invoice generation complies with the strict <code>Billable</code> interface contract, auditing fee structures, multi-tier institutional discounts, and healthcare taxes.
+            <div style="display: flex; gap: 10px;">
+              <button class="btn btn-secondary btn-sm" onclick="loadDoctorQueue()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                Refresh Queue
+              </button>
+              <a href="/patients.html" class="btn btn-primary btn-sm">+ Intake Patient</a>
             </div>
           </div>
         </div>
-      </section>
+
+        <div class="opd-desk-grid">
+          <!-- Waiting Queue Column -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <h3>Today’s Waiting Queue</h3>
+                <p>Select a patient to begin clinical evaluation</p>
+              </div>
+            </div>
+            <div class="card-body" style="padding: 14px;">
+              <div class="opd-queue-list" id="doctor-queue-container">
+                <div style="padding: 24px; text-align: center; color: var(--text-dim);">Loading OPD queue…</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Consultation Room Column -->
+          <div class="card" id="consultation-room-box">
+            <div class="card-header">
+              <div class="card-title">
+                <h3>Active Consultation & Clinical Charting</h3>
+                <p>Record examination findings, vitals, diagnosis, and prescription</p>
+              </div>
+              <span class="status-pill status-checked-in">IN CONSULTATION</span>
+            </div>
+            <div class="card-body">
+              <form id="doctor-consult-form" onsubmit="handleFinalizeConsultation(event)">
+                <input type="hidden" id="consult-appointment-id">
+
+                <!-- Patient Identity Bar -->
+                <div style="background: var(--bg-subtle); border: 1px solid var(--border-card); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <span style="font-size: 10.5px; text-transform: uppercase; font-weight: 700; color: var(--text-dim);">Attending Patient</span>
+                    <div id="consult-patient-name" style="font-size: 15px; font-weight: 700; color: var(--brand-navy);">Select a patient</div>
+                    <div id="consult-patient-meta" style="font-size: 11.5px; color: var(--text-muted);">Age & Contact info</div>
+                  </div>
+                  <div class="mrn-badge" id="consult-patient-mrn" style="font-size: 12px; padding: 4px 10px;">MRN</div>
+                </div>
+
+                <!-- Vitals Row -->
+                <div style="margin-bottom: 16px;">
+                  <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 6px;">Patient Vitals at Intake</label>
+                  <div class="vitals-grid-inputs">
+                    <div class="form-group">
+                      <label style="font-size: 10.5px;">BP (mmHg)</label>
+                      <input type="text" id="consult-bp" class="form-control" value="120/80">
+                    </div>
+                    <div class="form-group">
+                      <label style="font-size: 10.5px;">Pulse (bpm)</label>
+                      <input type="number" id="consult-pulse" class="form-control" value="74">
+                    </div>
+                    <div class="form-group">
+                      <label style="font-size: 10.5px;">Temp (°C)</label>
+                      <input type="text" id="consult-temp" class="form-control" value="36.8">
+                    </div>
+                    <div class="form-group">
+                      <label style="font-size: 10.5px;">Weight (kg)</label>
+                      <input type="text" id="consult-weight" class="form-control" value="68.0">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <label>Chief Complaint & Presenting Symptoms</label>
+                  <input type="text" id="consult-complaint" class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <label>Clinical Examination Notes & Assessment</label>
+                  <textarea id="consult-notes" class="form-control" rows="2" required></textarea>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <label>Provisional / Final Diagnosis (ICD-10)</label>
+                  <input type="text" id="consult-diagnosis" class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 18px;">
+                  <label>Prescribed Medications & Dosing Regimen (Rx)</label>
+                  <textarea id="consult-prescription" class="form-control" rows="3" required></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                  <button type="submit" id="btn-finalize-consult" class="btn btn-primary" style="padding: 10px 20px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    Finalize Encounter & Save to EHR
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- ADMIN EXECUTIVE OPERATIONS DASHBOARD VIEW      -->
+      <!-- ============================================== -->
+      <div id="admin-dashboard-view">
+        <!-- Live Clinical Metric Cards -->
+        <section class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-title">Active Patient Registry</span>
+              <div class="metric-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+              </div>
+            </div>
+            <div class="metric-value" id="stat-patients">--</div>
+            <span class="metric-sub">Master Patient Index Verified</span>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-title">Attending Clinicians</span>
+              <div class="metric-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+              </div>
+            </div>
+            <div class="metric-value" id="stat-doctors">--</div>
+            <span class="metric-sub">Across 5 OPD Specialties</span>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-title">Scheduled Encounters</span>
+              <div class="metric-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              </div>
+            </div>
+            <div class="metric-value" id="stat-appointments">--</div>
+            <span class="metric-sub">Double-Booking Conflict Check</span>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-title">Realized Collections</span>
+              <div class="metric-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+              </div>
+            </div>
+            <div class="metric-value" id="stat-revenue">--</div>
+            <span class="metric-sub">Point-of-Care Settled Invoices</span>
+          </div>
+        </section>
+
+        <!-- Today's Outpatient Encounters Table -->
+        <section class="card" style="margin-top: 24px;">
+          <div class="card-header">
+            <div class="card-title">
+              <h3>Current Outpatient Encounters Schedule</h3>
+              <p>Real-time outpatient bookings and consultation status</p>
+            </div>
+            <a href="/appointments.html" class="btn btn-secondary btn-sm">Full Appointment Roster</a>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Encounter ID</th>
+                    <th>Patient Details</th>
+                    <th>Attending Clinician</th>
+                    <th>Date</th>
+                    <th>Time Window</th>
+                    <th>Clinical Status</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-appointments-tbody">
+                  <tr><td colspan="6" style="text-align:center; padding: 24px; color: var(--text-dim);">Connecting to clinical telemetry service…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Clinical Governance & Unified Architecture -->
+        <section class="card" style="margin-top: 24px; border-left: 3px solid var(--primary);">
+          <div class="card-header">
+            <div class="card-title">
+              <h3>Unified HIS Architecture & Clinical Governance Assurance</h3>
+              <p>Common database engine between Desktop ClinicDesk and Web Portal</p>
+            </div>
+          </div>
+          <div class="card-body" style="font-size: 12.5px; color: var(--text-muted); line-height: 1.8;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+              <div>
+                <strong style="color: var(--brand-navy); display: block; margin-bottom: 4px;">Unified Database Persistence</strong>
+                Desktop Application (JavaFX) and Web Application share the exact same underlying H2 database at <code>data/hospital.mv.db</code> with <code>AUTO_SERVER=TRUE</code>.
+              </div>
+              <div>
+                <strong style="color: var(--brand-navy); display: block; margin-bottom: 4px;">Strict Concurrency & Duplicate Check</strong>
+                Registration locks and phone/DOB indexing prevent duplicate patient charts and ensure single-source-of-truth medical records across all hospital endpoints.
+              </div>
+              <div>
+                <strong style="color: var(--brand-navy); display: block; margin-bottom: 4px;">Role-Based Workflow Isolation</strong>
+                Admins, Doctors, Staff, and Patients access tailored clinical workflows with automated audit trail logging and BCrypt credential validation.
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
 

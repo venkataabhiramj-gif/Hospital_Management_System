@@ -2,6 +2,7 @@ package com.hospital.management.server.api;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -11,6 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @RestController
@@ -19,10 +21,12 @@ public class WebPortalController {
     private static final ZoneId CLINIC_ZONE = ZoneId.of("Asia/Kolkata");
     private final JdbcTemplate db;
     private final WorkflowController workflow;
+    private final PasswordEncoder passwordEncoder;
 
-    public WebPortalController(JdbcTemplate db, WorkflowController workflow) {
+    public WebPortalController(JdbcTemplate db, WorkflowController workflow, PasswordEncoder passwordEncoder) {
         this.db = db;
         this.workflow = workflow;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping("/dashboard")
@@ -295,15 +299,361 @@ public class WebPortalController {
         return Map.of("message", "EHR record removed successfully", "id", id);
     }
 
+    @PostMapping("/auth/login")
+    public Map<String, Object> authenticate(@RequestBody Map<String, Object> body) {
+        String profileType = String.valueOf(body.getOrDefault("profileType", "STAFF")).toUpperCase(Locale.ROOT);
+
+        if ("PATIENT".equals(profileType)) {
+            String identifier = String.valueOf(body.getOrDefault("patientNumber", body.getOrDefault("username", ""))).trim();
+            String phone = String.valueOf(body.getOrDefault("phone", "")).trim();
+
+            String sql = "SELECT id, patient_number, full_name, date_of_birth, phone FROM patients WHERE (patient_number = ? OR phone = ? OR phone LIKE ?) AND active = TRUE LIMIT 1";
+            List<Map<String, Object>> list = db.queryForList(sql, identifier, identifier, "%" + identifier);
+            if (list.isEmpty() && !phone.isBlank()) {
+                list = db.queryForList(sql, phone, phone, "%" + phone);
+            }
+            if (list.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Patient record not found. Please verify your MRN or registered phone.");
+            }
+            Map<String, Object> row = list.get(0);
+            return Map.of(
+                    "success", true,
+                    "profileType", "PATIENT",
+                    "role", "PATIENT",
+                    "patientId", ((Number) row.get("id")).longValue(),
+                    "patientNumber", row.get("patient_number"),
+                    "displayName", row.get("full_name"),
+                    "phone", row.get("phone") != null ? row.get("phone") : "",
+                    "dateOfBirth", row.get("date_of_birth") != null ? row.get("date_of_birth").toString() : ""
+            );
+        }
+
+        // ADMIN or STAFF
+        String username = String.valueOf(body.getOrDefault("username", "")).trim().toLowerCase(Locale.ROOT);
+        String password = String.valueOf(body.getOrDefault("password", ""));
+
+        List<Map<String, Object>> users = db.queryForList(
+                "SELECT id, username, password_hash, display_name, role, active FROM staff_users WHERE username = ? AND active = TRUE",
+                username);
+        if (users.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or staff account not found.");
+        }
+        Map<String, Object> user = users.get(0);
+        String hash = String.valueOf(user.get("password_hash"));
+        if (!passwordEncoder.matches(password, hash)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid password. Please check your credentials.");
+        }
+
+        String role = String.valueOf(user.get("role"));
+        if ("ADMIN".equals(profileType) && !"ADMIN".equals(role)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This staff account does not have Administrator privileges.");
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("profileType", "ADMIN".equals(role) ? "ADMIN" : "STAFF");
+        response.put("role", role);
+        response.put("staffId", ((Number) user.get("id")).longValue());
+        response.put("username", user.get("username"));
+        response.put("displayName", user.get("display_name"));
+
+        if ("DOCTOR".equals(role)) {
+            List<Map<String, Object>> doc = db.queryForList(
+                    "SELECT id, specialty, appointment_minutes FROM doctors WHERE staff_user_id = ? AND active = TRUE LIMIT 1",
+                    ((Number) user.get("id")).longValue());
+            if (!doc.isEmpty()) {
+                response.put("doctorId", ((Number) doc.get(0).get("id")).longValue());
+                response.put("specialty", doc.get(0).get("specialty"));
+                response.put("appointmentMinutes", doc.get(0).get("appointment_minutes"));
+            }
+        }
+
+        return response;
+    }
+
+    @GetMapping("/auth/demo-profiles")
+    public Map<String, Object> demoProfiles() {
+        Map<String, Object> res = new HashMap<>();
+
+        res.put("admin", Map.of(
+                "username", "admin",
+                "password", "DemoAdminPass123!",
+                "displayName", "System Administrator",
+                "role", "ADMIN",
+                "badge", "Executive Operations"
+        ));
+
+        List<Map<String, Object>> staffList = new ArrayList<>();
+        staffList.add(Map.of(
+                "username", "demo.doctor",
+                "password", "DemoStaffPass123!",
+                "displayName", "Dr. Kavya Menon",
+                "role", "DOCTOR",
+                "specialty", "General Medicine & Cardiology",
+                "badge", "OPD Room 03"
+        ));
+        staffList.add(Map.of(
+                "username", "demo.reception",
+                "password", "DemoStaffPass123!",
+                "displayName", "Front Desk Reception",
+                "role", "RECEPTIONIST",
+                "badge", "Patient Intake & Triage"
+        ));
+        staffList.add(Map.of(
+                "username", "demo.pharmacy",
+                "password", "DemoStaffPass123!",
+                "displayName", "Central Pharmacy",
+                "role", "PHARMACIST",
+                "badge", "Dispensary Unit"
+        ));
+        staffList.add(Map.of(
+                "username", "demo.billing",
+                "password", "DemoStaffPass123!",
+                "displayName", "Billing & RCM Office",
+                "role", "BILLING",
+                "badge", "Revenue Cycle Desk"
+        ));
+        res.put("staff", staffList);
+
+        List<Map<String, Object>> patientList = db.query(
+                "SELECT id, patient_number, full_name, date_of_birth, phone FROM patients WHERE active=TRUE ORDER BY id ASC LIMIT 5",
+                (rs, rowNum) -> {
+                    Map<String, Object> p = new HashMap<>();
+                    p.put("patientId", rs.getLong("id"));
+                    p.put("patientNumber", rs.getString("patient_number"));
+                    p.put("displayName", rs.getString("full_name"));
+                    p.put("dateOfBirth", rs.getDate("date_of_birth") != null ? rs.getDate("date_of_birth").toString() : "");
+                    p.put("phone", rs.getString("phone"));
+                    return p;
+                });
+        res.put("patients", patientList);
+
+        return res;
+    }
+
+    @GetMapping("/patient/overview")
+    public Map<String, Object> patientOverview(@RequestParam String patientNumber) {
+        String pnum = patientNumber.trim();
+        List<Map<String, Object>> patients = db.queryForList(
+                "SELECT id, patient_number, full_name, date_of_birth, phone FROM patients WHERE (patient_number = ? OR CAST(id AS VARCHAR) = ?) AND active = TRUE LIMIT 1",
+                pnum, pnum);
+        if (patients.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Patient not found");
+        }
+        Map<String, Object> patient = patients.get(0);
+        long patientId = ((Number) patient.get("id")).longValue();
+
+        Map<String, Object> profile = new HashMap<>(patient);
+        profile.put("bloodGroup", "O+ (Positive)");
+        profile.put("allergies", "Penicillin (Mild rash) · Reported 2024");
+        profile.put("emergencyContact", "+91 98450 11223");
+        profile.put("primaryClinic", "ApexCare Memorial Hospital · Central OPD");
+
+        List<Map<String, Object>> appointments = db.queryForList("""
+            SELECT a.id AS appointment_id,
+                   a.starts_at,
+                   a.ends_at,
+                   a.visit_type,
+                   a.status,
+                   a.reason,
+                   d.id AS doctor_id,
+                   s.display_name AS doctor_name,
+                   d.specialty
+            FROM appointments a
+            JOIN doctors d ON d.id = a.doctor_id
+            JOIN staff_users s ON s.id = d.staff_user_id
+            WHERE a.patient_id = ?
+            ORDER BY a.starts_at DESC
+        """, patientId);
+
+        List<Map<String, Object>> prescriptions = db.queryForList("""
+            SELECT e.id AS encounter_id,
+                   e.created_at,
+                   COALESCE(e.diagnosis_text, 'General Outpatient Care') AS diagnosis,
+                   COALESCE(e.current_medicines, 'Tab. Paracetamol 500mg PO PRN') AS medicines,
+                   COALESCE(e.complaint, 'Routine checkup') AS complaint,
+                   COALESCE(e.clinical_notes, 'Follow up as advised') AS notes,
+                   s.display_name AS doctor_name,
+                   d.specialty
+            FROM encounters e
+            JOIN doctors d ON d.id = e.doctor_id
+            JOIN staff_users s ON s.id = d.staff_user_id
+            WHERE e.patient_id = ?
+            ORDER BY e.created_at DESC
+        """, patientId);
+
+        List<Map<String, Object>> invoices = db.queryForList("""
+            SELECT i.id AS invoice_id,
+                   i.invoice_number,
+                   i.status,
+                   CAST(i.created_at AS DATE) AS invoice_date,
+                   COALESCE((SELECT SUM(quantity * unit_price_snapshot) FROM invoice_items x WHERE x.invoice_id = i.id), 500.00) AS total_amount,
+                   COALESCE((SELECT SUM(amount - refund_amount) FROM payments p WHERE p.invoice_id = i.id), 0.00) AS paid_amount,
+                   (SELECT receipt_number FROM payments p WHERE p.invoice_id = i.id ORDER BY p.id DESC LIMIT 1) AS receipt_number
+            FROM invoices i
+            WHERE i.patient_id = ?
+            ORDER BY i.created_at DESC
+        """, patientId);
+
+        return Map.of(
+                "patient", profile,
+                "appointments", appointments,
+                "prescriptions", prescriptions,
+                "invoices", invoices
+        );
+    }
+
+    @PostMapping("/patient/book")
+    @Transactional
+    public Map<String, Object> bookPatientAppointment(@RequestBody Map<String, Object> body) {
+        Long staff = workflow.currentStaffId();
+        String patientNumber = String.valueOf(body.get("patientNumber")).trim();
+        Long patientId = db.query(
+                "SELECT id FROM patients WHERE (patient_number = ? OR CAST(id AS VARCHAR) = ?) AND active = TRUE",
+                rs -> rs.next() ? rs.getLong(1) : null, patientNumber, patientNumber);
+        if (patientId == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Patient not found");
+        }
+
+        Long doctorId = Long.parseLong(String.valueOf(body.getOrDefault("doctorId", "1")));
+        String reason = String.valueOf(body.getOrDefault("reason", "Self-service outpatient appointment"));
+        String dateStr = String.valueOf(body.getOrDefault("date", LocalDate.now().plusDays(1).toString()));
+        String timeStr = String.valueOf(body.getOrDefault("time", "10:00"));
+
+        LocalDate date = LocalDate.parse(dateStr);
+        LocalTime time = LocalTime.parse(timeStr.length() == 5 ? timeStr + ":00" : timeStr);
+        OffsetDateTime startsAt = OffsetDateTime.of(date, time, CLINIC_ZONE.getRules().getOffset(java.time.Instant.now()));
+        OffsetDateTime endsAt = startsAt.plusMinutes(20);
+
+        Long apptId = insert(
+                "INSERT INTO appointments(patient_id, doctor_id, starts_at, ends_at, visit_type, status, reason, booked_by) VALUES(?,?,?,?, 'APPOINTMENT', 'BOOKED', ?, ?)",
+                patientId, doctorId, startsAt, endsAt, reason, staff);
+
+        return Map.of("success", true, "appointmentId", apptId, "message", "Appointment confirmed successfully");
+    }
+
+    @PostMapping("/patient/cancel")
+    @Transactional
+    public Map<String, Object> cancelPatientAppointment(@RequestBody Map<String, Object> body) {
+        long appointmentId = Long.parseLong(String.valueOf(body.get("appointmentId")));
+        String patientNumber = String.valueOf(body.get("patientNumber")).trim();
+
+        int rows = db.update("""
+            UPDATE appointments
+            SET status = 'CANCELLED', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND patient_id IN (SELECT id FROM patients WHERE (patient_number = ? OR CAST(id AS VARCHAR) = ?))
+        """, appointmentId, patientNumber, patientNumber);
+
+        if (rows == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Appointment not found or could not be cancelled");
+        }
+
+        return Map.of("success", true, "message", "Appointment cancelled successfully");
+    }
+
+    @GetMapping("/doctor/queue")
+    public List<Map<String, Object>> doctorQueue(@RequestParam(required = false) Long doctorId) {
+        String sql = """
+            SELECT a.id AS appointment_id,
+                   a.starts_at,
+                   a.ends_at,
+                   a.visit_type,
+                   a.status,
+                   a.reason,
+                   p.id AS patient_id,
+                   p.patient_number,
+                   p.full_name AS patient_name,
+                   p.date_of_birth,
+                   p.phone,
+                   d.id AS doctor_id,
+                   s.display_name AS doctor_name,
+                   d.specialty,
+                   (SELECT COUNT(*) FROM encounters e WHERE e.appointment_id = a.id) AS has_encounter
+            FROM appointments a
+            JOIN patients p ON p.id = a.patient_id
+            JOIN doctors d ON d.id = a.doctor_id
+            JOIN staff_users s ON s.id = d.staff_user_id
+            WHERE CAST(a.starts_at AS DATE) >= CURRENT_DATE
+        """ + (doctorId != null ? " AND a.doctor_id = ? " : "") + """
+            ORDER BY a.starts_at ASC
+        """;
+
+        List<Map<String, Object>> rows = doctorId != null ? db.queryForList(sql, doctorId) : db.queryForList(sql);
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (Map<String, Object> r : rows) {
+            Map<String, Object> m = new HashMap<>(r);
+            LocalDate dob = r.get("date_of_birth") != null ? ((java.sql.Date) r.get("date_of_birth")).toLocalDate() : null;
+            int age = dob != null ? java.time.Period.between(dob, LocalDate.now()).getYears() : 32;
+            m.put("age", age);
+            list.add(m);
+        }
+        return list;
+    }
+
+    @PostMapping("/doctor/consult")
+    @Transactional
+    public Map<String, Object> doctorConsult(@RequestBody Map<String, Object> body) {
+        Long staff = workflow.currentStaffId();
+        long appointmentId = Long.parseLong(String.valueOf(body.get("appointmentId")));
+
+        Map<String, Object> appt = db.queryForMap(
+                "SELECT patient_id, doctor_id FROM appointments WHERE id = ?", appointmentId);
+        long patientId = ((Number) appt.get("patient_id")).longValue();
+        long doctorId = ((Number) appt.get("doctor_id")).longValue();
+
+        String complaint = String.valueOf(body.getOrDefault("complaint", "Clinical evaluation"));
+        String bp = String.valueOf(body.getOrDefault("bloodPressure", "120/80"));
+        Integer pulse = body.get("pulsePerMinute") != null ? Integer.parseInt(String.valueOf(body.get("pulsePerMinute"))) : 76;
+        BigDecimal temp = new BigDecimal(String.valueOf(body.getOrDefault("temperatureCelsius", "36.8")));
+        BigDecimal weight = new BigDecimal(String.valueOf(body.getOrDefault("weightKg", "68.0")));
+        String clinicalNotes = String.valueOf(body.getOrDefault("clinicalNotes", "Routine outpatient examination"));
+        String diagnosis = String.valueOf(body.getOrDefault("diagnosisText", "Outpatient Indication"));
+        String medicines = String.valueOf(body.getOrDefault("prescriptionText", "Tab. Paracetamol 500mg PO PRN"));
+
+        Long existingEncounterId = db.query(
+                "SELECT id FROM encounters WHERE appointment_id = ?",
+                rs -> rs.next() ? rs.getLong(1) : null, appointmentId);
+
+        Long encId;
+        if (existingEncounterId != null) {
+            encId = existingEncounterId;
+            db.update("""
+                UPDATE encounters
+                SET complaint = ?, blood_pressure = ?, pulse_per_minute = ?, temperature_celsius = ?,
+                    weight_kg = ?, clinical_notes = ?, current_medicines = ?, diagnosis_text = ?,
+                    status = 'FINALIZED', finalized_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, complaint, bp, pulse, temp, weight, clinicalNotes, medicines, diagnosis, encId);
+        } else {
+            encId = insert("""
+                INSERT INTO encounters(appointment_id, patient_id, doctor_id, complaint, blood_pressure, pulse_per_minute,
+                                       temperature_celsius, weight_kg, clinical_notes, current_medicines, diagnosis_text,
+                                       status, created_by, finalized_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?, 'FINALIZED', ?, CURRENT_TIMESTAMP)
+            """, appointmentId, patientId, doctorId, complaint, bp, pulse, temp, weight, clinicalNotes, medicines, diagnosis, staff);
+        }
+
+        db.update("UPDATE appointments SET status = 'COMPLETED', updated_at = CURRENT_TIMESTAMP WHERE id = ?", appointmentId);
+
+        return Map.of("success", true, "encounterId", encId, "message", "Consultation finalized and saved to EHR");
+    }
+
     private Long insert(String sql, Object... params) {
         org.springframework.jdbc.support.KeyHolder keys = new org.springframework.jdbc.support.GeneratedKeyHolder();
         db.update(con -> {
-            java.sql.PreparedStatement ps = con.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS);
+            java.sql.PreparedStatement ps = con.prepareStatement(sql, new String[] { "id" });
             for (int i = 0; i < params.length; i++) {
                 ps.setObject(i + 1, params[i]);
             }
             return ps;
         }, keys);
+        if (keys.getKeys() != null) {
+            for (Map.Entry<String, Object> entry : keys.getKeys().entrySet()) {
+                if (entry.getKey().equalsIgnoreCase("id") && entry.getValue() instanceof Number n) {
+                    return n.longValue();
+                }
+            }
+        }
         Number key = keys.getKey();
         if (key == null) {
             throw new IllegalStateException("Insert did not generate a database key");

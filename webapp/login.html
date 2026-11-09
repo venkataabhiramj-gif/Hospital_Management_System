@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Gateway — ApexCare Memorial Hospital & ClinicDesk</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="login-body">
+  <!-- Top Institutional Bar -->
+  <header class="login-top-banner">
+    <div class="hospital-brand-lockup">
+      <div class="brand-symbol">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+        </svg>
+      </div>
+      <div class="hospital-brand-title">
+        <h2>ApexCare Memorial Hospital</h2>
+        <p>ClinicDesk Outpatient Clinical System · Facility 01</p>
+      </div>
+    </div>
+    <div class="login-helpline">
+      <span>24×7 Central Emergency:</span>
+      <div class="hotline-chip">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+        1800-419-8800 (Toll-Free)
+      </div>
+    </div>
+  </header>
+
+  <!-- Login Main Container -->
+  <main class="login-container">
+    <div class="login-hero-text">
+      <h1>Healthcare Portal Gateway</h1>
+      <p>Secure unified access for hospital administrators, clinical doctors, dispensary staff, and outpatients across Facility 01.</p>
+    </div>
+
+    <!-- 3 Profile Option Cards -->
+    <div class="profile-selector-tabs" id="profile-tabs">
+      <!-- Profile 1: Admin -->
+      <div class="profile-tab-card active" onclick="selectProfile('ADMIN')" id="tab-ADMIN">
+        <div class="tab-icon-badge">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        </div>
+        <div class="tab-title">Administrator</div>
+        <div class="tab-desc">Operations census, staff credentials, clinical audit logs & financial ledger.</div>
+      </div>
+
+      <!-- Profile 2: Doctors & Clinical Staff -->
+      <div class="profile-tab-card" onclick="selectProfile('STAFF')" id="tab-STAFF">
+        <div class="tab-icon-badge">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"></path><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"></path><circle cx="20" cy="10" r="2"></circle></svg>
+        </div>
+        <div class="tab-title">Doctors & Staff</div>
+        <div class="tab-desc">OPD consultation room, patient triage, electronic progress notes & pharmacy.</div>
+      </div>
+
+      <!-- Profile 3: Patient Portal -->
+      <div class="profile-tab-card" onclick="selectProfile('PATIENT')" id="tab-PATIENT">
+        <div class="tab-icon-badge">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        </div>
+        <div class="tab-title">Patient Portal</div>
+        <div class="tab-desc">Self-service appointment booking, active prescriptions & official tax receipts.</div>
+      </div>
+    </div>
+
+    <!-- Active Form Box -->
+    <div class="auth-box-card">
+      <div class="auth-form-header">
+        <h3 id="form-header-title">Administrator Authentication</h3>
+        <p id="form-header-desc">Enter your administrative username and secure key to access the hospital command console.</p>
+      </div>
+
+      <form id="login-form" onsubmit="handlePortalLogin(event)">
+        <div id="staff-admin-fields">
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label id="username-label">Username / Staff ID</label>
+            <input type="text" id="login-username" class="form-control" placeholder="e.g. admin" required autocomplete="username">
+          </div>
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label>Secure Password</label>
+            <input type="password" id="login-password" class="form-control" placeholder="••••••••••••" required autocomplete="current-password">
+          </div>
+        </div>
+
+        <div id="patient-fields" style="display: none;">
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label>Medical Record Number (MRN) or Registered Mobile</label>
+            <input type="text" id="patient-identifier" class="form-control" placeholder="e.g. DEMO-IN-001 or +91 00000 00001">
+          </div>
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label>Date of Birth (YYYY-MM-DD)</label>
+            <input type="date" id="patient-dob" class="form-control" value="1994-04-12">
+          </div>
+        </div>
+
+        <button type="submit" id="btn-submit-login" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 14px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+          <span id="submit-btn-text">Sign In as Administrator</span>
+        </button>
+      </form>
+
+      <!-- 1-Click Quick Demo Selectors -->
+      <div class="quick-demo-container">
+        <div class="quick-demo-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          Instant 1-Click Demo Profiles (Unified Database Active)
+        </div>
+        
+        <!-- Admin Demo Options -->
+        <div id="demo-row-ADMIN" class="demo-buttons-row">
+          <button type="button" class="demo-btn-chip" onclick="quickFillAndLogin('admin', 'DemoAdminPass123!', 'ADMIN')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            System Administrator (Full Oversight)
+          </button>
+        </div>
+
+        <!-- Staff Demo Options -->
+        <div id="demo-row-STAFF" class="demo-buttons-row" style="display: none;">
+          <button type="button" class="demo-btn-chip" onclick="quickFillAndLogin('demo.doctor', 'DemoStaffPass123!', 'STAFF')">
+            🩺 Dr. Kavya Menon (General Medicine & Cardiology)
+          </button>
+          <button type="button" class="demo-btn-chip" onclick="quickFillAndLogin('demo.reception', 'DemoStaffPass123!', 'STAFF')">
+            📋 Front Desk Reception (Intake Desk)
+          </button>
+          <button type="button" class="demo-btn-chip" onclick="quickFillAndLogin('demo.pharmacy', 'DemoStaffPass123!', 'STAFF')">
+            💊 Central Pharmacy (Dispensary)
+          </button>
+          <button type="button" class="demo-btn-chip" onclick="quickFillAndLogin('demo.billing', 'DemoStaffPass123!', 'STAFF')">
+            🧾 Billing & RCM Officer
+          </button>
+        </div>
+
+        <!-- Patient Demo Options -->
+        <div id="demo-row-PATIENT" class="demo-buttons-row" style="display: none;">
+          <button type="button" class="demo-btn-chip" onclick="quickFillPatientAndLogin('DEMO-IN-001', '1994-04-12')">
+            👤 Ananya Rao (MRN: DEMO-IN-001)
+          </button>
+          <button type="button" class="demo-btn-chip" onclick="quickFillPatientAndLogin('DEMO-IN-002', '1988-09-03')">
+            👤 Arjun Nair (MRN: DEMO-IN-002)
+          </button>
+          <button type="button" class="demo-btn-chip" onclick="quickFillPatientAndLogin('DEMO-IN-003', '2001-01-26')">
+            👤 Meera Iyer (MRN: DEMO-IN-003)
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Institutional Trust Footer -->
+  <footer class="login-trust-footer">
+    <div class="trust-badges">
+      <div class="trust-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        <span>ABDM Compliant EHR</span>
+      </div>
+      <div class="trust-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.3"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <span>ISO 27001 Certified & 256-Bit Encrypted</span>
+      </div>
+      <div class="trust-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#146b78" stroke-width="2.3"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+        <span>Unified Database: data/hospital.mv.db</span>
+      </div>
+    </div>
+    <div style="font-size: 11.5px; color: var(--text-dim);">
+      © ApexCare Memorial Hospital · Outpatient Management System
+    </div>
+  </footer>
+
+  <div id="global-alert" class="alert"></div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let activeProfileType = 'ADMIN';
+
+    function selectProfile(profile) {
+      activeProfileType = profile;
+      document.querySelectorAll('.profile-tab-card').forEach(c => c.classList.remove('active'));
+      document.getElementById('tab-' + profile).classList.add('active');
+
+      const staffFields = document.getElementById('staff-admin-fields');
+      const patientFields = document.getElementById('patient-fields');
+      const headerTitle = document.getElementById('form-header-title');
+      const headerDesc = document.getElementById('form-header-desc');
+      const submitText = document.getElementById('submit-btn-text');
+
+      document.getElementById('demo-row-ADMIN').style.display = (profile === 'ADMIN') ? 'flex' : 'none';
+      document.getElementById('demo-row-STAFF').style.display = (profile === 'STAFF') ? 'flex' : 'none';
+      document.getElementById('demo-row-PATIENT').style.display = (profile === 'PATIENT') ? 'flex' : 'none';
+
+      if (profile === 'PATIENT') {
+        staffFields.style.display = 'none';
+        patientFields.style.display = 'block';
+        headerTitle.textContent = 'Patient & Family Portal Access';
+        headerDesc.textContent = 'Enter your Patient MRN or registered phone number to view your health records, appointments, and receipts.';
+        submitText.textContent = 'Enter Patient Portal';
+        document.getElementById('login-username').removeAttribute('required');
+        document.getElementById('login-password').removeAttribute('required');
+        document.getElementById('patient-identifier').setAttribute('required', 'true');
+      } else {
+        staffFields.style.display = 'block';
+        patientFields.style.display = 'none';
+        document.getElementById('login-username').setAttribute('required', 'true');
+        document.getElementById('login-password').setAttribute('required', 'true');
+        document.getElementById('patient-identifier').removeAttribute('required');
+
+        if (profile === 'ADMIN') {
+          headerTitle.textContent = 'Administrator Authentication';
+          headerDesc.textContent = 'Enter your administrative username and secure key to access the hospital command console.';
+          submitText.textContent = 'Sign In as Administrator';
+          document.getElementById('username-label').textContent = 'Administrator Username';
+          document.getElementById('login-username').value = 'admin';
+          document.getElementById('login-password').value = 'DemoAdminPass123!';
+        } else {
+          headerTitle.textContent = 'Clinical & Staff Authentication';
+          headerDesc.textContent = 'Sign in with your staff account to open the OPD clinical desk, patient queue, and pharmacy.';
+          submitText.textContent = 'Sign In as Clinical Staff';
+          document.getElementById('username-label').textContent = 'Staff Username';
+          document.getElementById('login-username').value = 'demo.doctor';
+          document.getElementById('login-password').value = 'DemoStaffPass123!';
+        }
+      }
+    }
+
+    async function handlePortalLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-submit-login');
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+
+      try {
+        let payload = { profileType: activeProfileType };
+        if (activeProfileType === 'PATIENT') {
+          payload.patientNumber = document.getElementById('patient-identifier').value.trim();
+          payload.dob = document.getElementById('patient-dob').value;
+        } else {
+          payload.username = document.getElementById('login-username').value.trim();
+          payload.password = document.getElementById('login-password').value;
+        }
+
+        const res = await apiCall('/auth/login', 'POST', payload);
+        if (res.success) {
+          showAlert(`Welcome, ${res.displayName}! Loading portal…`, 'success');
+          sessionStorage.setItem('apexcare_auth', JSON.stringify(res));
+          setTimeout(() => {
+            if (res.profileType === 'PATIENT') {
+              window.location.href = '/patient-portal.html';
+            } else {
+              window.location.href = '/';
+            }
+          }, 800);
+        }
+      } catch (err) {
+        showAlert(err.message || 'Authentication failed. Please verify credentials.', 'error');
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    }
+
+    function quickFillAndLogin(username, password, role) {
+      selectProfile(role);
+      document.getElementById('login-username').value = username;
+      document.getElementById('login-password').value = password;
+      document.getElementById('btn-submit-login').click();
+    }
+
+    function quickFillPatientAndLogin(mrn, dob) {
+      selectProfile('PATIENT');
+      document.getElementById('patient-identifier').value = mrn;
+      document.getElementById('patient-dob').value = dob;
+      document.getElementById('btn-submit-login').click();
+    }
+
+    // Default to admin
+    selectProfile('ADMIN');
+  </script>
+</body>
+</html>

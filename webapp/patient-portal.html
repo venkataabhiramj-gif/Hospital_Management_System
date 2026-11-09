@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patient & Family Portal — ApexCare Memorial Hospital</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-symbol">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h2>ApexCare</h2>
+        <span>Patient Health</span>
+      </div>
+    </div>
+
+    <div class="nav-section-label">Patient Services</div>
+    <ul class="sidebar-nav">
+      <li class="nav-item">
+        <a href="#overview" class="nav-link active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+          <span>Health Home</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="#book-section" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Book Appointment</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="#appointments-section" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span>My Visits</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="#prescriptions-section" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          <span>Prescriptions & Rx</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="#billing-section" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+          <span>Invoices & Receipts</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-facility-badge">
+      <div class="facility-dot"></div>
+      <div class="facility-meta">
+        <h4>ApexCare Central OPD</h4>
+        <p>Patient Health Services Active</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Viewport -->
+  <div class="main-wrapper">
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <div class="page-heading">
+          <h1 id="patient-greeting">Patient Health Home</h1>
+          <p>Personal health records, outpatient consultations, and verified tax receipts</p>
+        </div>
+      </div>
+      <div class="top-bar-right">
+        <div class="user-profile-pill">
+          <div class="user-avatar" id="top-patient-avatar">AR</div>
+          <div>
+            <div class="user-meta-name" id="top-patient-name">Ananya Rao</div>
+            <div style="font-size: 10px; color: var(--text-dim);" id="top-patient-mrn">MRN: DEMO-IN-001</div>
+          </div>
+          <span class="user-meta-role">PATIENT</span>
+        </div>
+        <button class="btn-signout" onclick="logoutUser()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          Switch Profile
+        </button>
+      </div>
+    </header>
+
+    <main class="content-container">
+      <div id="global-alert" class="alert"></div>
+
+      <!-- Patient Health Banner Card -->
+      <section class="patient-health-banner" id="overview">
+        <div class="patient-identity">
+          <div class="patient-avatar-large" id="banner-avatar">AR</div>
+          <div class="patient-name-block">
+            <h2 id="banner-name">Ananya Rao</h2>
+            <p>
+              <span>MRN: <strong class="mrn-badge" id="banner-mrn">DEMO-IN-001</strong></span>
+              <span>•</span>
+              <span id="banner-age-gender">30 Yrs · Female</span>
+              <span>•</span>
+              <span id="banner-phone">+91 00000 00001</span>
+            </p>
+          </div>
+        </div>
+        <div class="patient-quick-metrics">
+          <div class="quick-metric-item">
+            <span>Blood Group</span>
+            <strong id="banner-blood">O+ (Positive)</strong>
+          </div>
+          <div class="quick-metric-item">
+            <span>Primary Center</span>
+            <strong>Central OPD · Fac 01</strong>
+          </div>
+          <div class="quick-metric-item">
+            <span>Emergency Contact</span>
+            <strong id="banner-emergency">+91 98450 11223</strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- Known Allergies Alert Banner -->
+      <div class="allergy-alert-banner">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        <div>
+          <strong>Verified Clinical Alert:</strong>
+          <span id="banner-allergies">Penicillin (Mild rash) — Verified in hospital EHR records. Inform physician before any antibiotic administration.</span>
+        </div>
+      </div>
+
+      <!-- 2-Column Operational Grid: Booking & Upcoming Visits -->
+      <div style="display: grid; grid-template-columns: 420px 1fr; gap: 20px;" id="book-section">
+        <!-- Self-Service Booking Widget -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <h3>Book an OPD Consultation</h3>
+              <p>Real-time slot reservation directly in hospital calendar</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <form id="patient-booking-form" onsubmit="handlePatientBooking(event)">
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label>Medical Specialty</label>
+                <select id="book-specialty" class="form-control" onchange="filterDoctorsBySpecialty(this.value)">
+                  <option value="All">All Outpatient Specialties</option>
+                  <option value="General Medicine">General Medicine</option>
+                  <option value="Cardiology">Cardiology</option>
+                  <option value="Neurology">Neurology</option>
+                  <option value="Orthopedics">Orthopedics</option>
+                  <option value="Pediatrics">Pediatrics</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label>Consultant Physician</label>
+                <select id="book-doctor" class="form-control" required>
+                  <option value="">Loading available medical specialists…</option>
+                </select>
+              </div>
+
+              <div class="form-row" style="margin-bottom: 14px;">
+                <div class="form-group">
+                  <label>Preferred Date</label>
+                  <input type="date" id="book-date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                  <label>OPD Time Slot</label>
+                  <select id="book-time" class="form-control" required>
+                    <option value="09:30">09:30 AM (Morning)</option>
+                    <option value="10:30">10:30 AM (Morning)</option>
+                    <option value="11:30">11:30 AM (Morning)</option>
+                    <option value="14:00">02:00 PM (Afternoon)</option>
+                    <option value="15:30">03:30 PM (Afternoon)</option>
+                    <option value="16:30">04:30 PM (Evening)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 18px;">
+                <label>Reason for Visit / Symptoms</label>
+                <textarea id="book-reason" class="form-control" rows="3" placeholder="Describe symptoms or follow-up reason…" required></textarea>
+              </div>
+
+              <button type="submit" id="btn-patient-book" class="btn btn-primary" style="width: 100%; padding: 11px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                Confirm Appointment Reservation
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- My Scheduled Appointments -->
+        <div class="card" id="appointments-section">
+          <div class="card-header">
+            <div class="card-title">
+              <h3>My Scheduled Encounters</h3>
+              <p>Upcoming and past outpatient clinic visits</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadPatientData()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+              Refresh
+            </button>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date & Time</th>
+                    <th>Doctor</th>
+                    <th>Specialty</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="patient-appointments-tbody">
+                  <tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-dim);">Loading patient encounters…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prescriptions & Care Plans -->
+      <section class="card" id="prescriptions-section">
+        <div class="card-header">
+          <div class="card-title">
+            <h3>My Active Prescriptions & Treatment Regimens</h3>
+            <p>Official medication orders and dosage schedules prescribed by your physicians</p>
+          </div>
+        </div>
+        <div class="card-body" id="patient-prescriptions-container">
+          <p style="color: var(--text-dim); text-align: center; padding: 20px;">Loading prescriptions…</p>
+        </div>
+      </section>
+
+      <!-- Invoices & Tax Receipts -->
+      <section class="card" id="billing-section">
+        <div class="card-header">
+          <div class="card-title">
+            <h3>My Billing Ledger & Tax Invoices</h3>
+            <p>Itemized hospital bills, payment receipts, and tax statements</p>
+          </div>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Invoice Number</th>
+                  <th>Billing Date</th>
+                  <th>Status</th>
+                  <th>Amount</th>
+                  <th>Receipt Number</th>
+                  <th>Tax Invoice</th>
+                </tr>
+              </thead>
+              <tbody id="patient-invoices-tbody">
+                <tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-dim);">Loading billing records…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Official Tax Receipt Modal -->
+  <div class="modal-overlay" id="receipt-modal">
+    <div class="modal-card" style="max-width: 640px;">
+      <div class="modal-header">
+        <h3>Official Outpatient Tax Invoice Receipt</h3>
+        <button class="modal-close" onclick="closeModal('receipt-modal')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="receipt-modal-body">
+        <!-- Rendered via JavaScript -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('receipt-modal')">Close</button>
+        <button class="btn btn-primary" onclick="window.print()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          Print Receipt
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set default tomorrow date
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      document.getElementById('book-date').value = tomorrow.toISOString().split('T')[0];
+
+      requireAuth('PATIENT');
+      loadPatientData();
+      loadDoctorsForBooking();
+    });
+
+    let allDoctorsList = [];
+    let currentPatientData = null;
+
+    async function loadDoctorsForBooking() {
+      try {
+        allDoctorsList = await apiCall('/doctors');
+        populateDoctorSelect(allDoctorsList);
+      } catch (err) {
+        console.error('Failed to load doctors:', err);
+      }
+    }
+
+    function populateDoctorSelect(docs) {
+      const select = document.getElementById('book-doctor');
+      if (!select) return;
+      if (docs.length === 0) {
+        select.innerHTML = '<option value="">No specialists found</option>';
+        return;
+      }
+      select.innerHTML = docs.map(d => `
+        <option value="${d.id}">${d.name} (${d.specialization})</option>
+      `).join('');
+    }
+
+    function filterDoctorsBySpecialty(spec) {
+      if (spec === 'All') {
+        populateDoctorSelect(allDoctorsList);
+      } else {
+        const filtered = allDoctorsList.filter(d => d.specialization.toLowerCase().includes(spec.toLowerCase()));
+        populateDoctorSelect(filtered.length > 0 ? filtered : allDoctorsList);
+      }
+    }
+
+    async function loadPatientData() {
+      const user = getAuthUser();
+      if (!user) return;
+
+      const pnum = user.patientNumber || 'DEMO-IN-001';
+      try {
+        const data = await apiCall(`/patient/overview?patientNumber=${encodeURIComponent(pnum)}`);
+        currentPatientData = data;
+
+        // Render header
+        const p = data.patient;
+        document.getElementById('banner-name').textContent = p.full_name;
+        document.getElementById('top-patient-name').textContent = p.full_name;
+        document.getElementById('patient-greeting').textContent = `Welcome back, ${p.full_name.split(' ')[0]}`;
+        document.getElementById('banner-mrn').textContent = p.patient_number;
+        document.getElementById('top-patient-mrn').textContent = `MRN: ${p.patient_number}`;
+        document.getElementById('banner-phone').textContent = p.phone || '+91 00000 00001';
+        document.getElementById('banner-avatar').textContent = getInitials(p.full_name);
+        document.getElementById('top-patient-avatar').textContent = getInitials(p.full_name);
+
+        if (p.date_of_birth) {
+          const dob = new Date(p.date_of_birth);
+          const age = new Date().getFullYear() - dob.getFullYear();
+          document.getElementById('banner-age-gender').textContent = `${age} Yrs · Female`;
+        }
+
+        // Render appointments
+        const apptTbody = document.getElementById('patient-appointments-tbody');
+        if (data.appointments.length === 0) {
+          apptTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-dim);">No appointments scheduled yet. Book your first visit on the left!</td></tr>';
+        } else {
+          apptTbody.innerHTML = data.appointments.map(a => {
+            const dateStr = a.starts_at ? new Date(a.starts_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Scheduled';
+            const statusClass = a.status === 'COMPLETED' ? 'status-completed' : (a.status === 'CANCELLED' ? 'status-cancelled' : 'status-booked');
+            const canCancel = a.status === 'BOOKED' || a.status === 'APPOINTMENT';
+
+            return `
+              <tr>
+                <td style="font-weight: 600; color: var(--brand-navy);">${dateStr}</td>
+                <td style="font-weight: 600;">${a.doctor_name}</td>
+                <td><span class="mrn-badge">${a.specialty}</span></td>
+                <td style="color: var(--text-muted);">${a.reason || 'Consultation'}</td>
+                <td><span class="status-pill ${statusClass}">${a.status}</span></td>
+                <td>
+                  ${canCancel ? `<button class="btn btn-danger btn-sm" onclick="cancelAppointment(${a.appointment_id})">Cancel</button>` : `<span style="color: var(--text-dim); font-size: 11px;">Completed</span>`}
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        // Render prescriptions
+        const rxContainer = document.getElementById('patient-prescriptions-container');
+        if (data.prescriptions.length === 0) {
+          rxContainer.innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 24px;">No active prescriptions recorded in your medical history.</p>';
+        } else {
+          rxContainer.innerHTML = data.prescriptions.map(rx => `
+            <div class="prescription-card">
+              <div class="rx-header">
+                <div class="rx-title">
+                  <span class="rx-badge">℞</span>
+                  <span>Diagnosis: ${rx.diagnosis}</span>
+                </div>
+                <span class="status-pill status-completed">Active Care Plan</span>
+              </div>
+              <div class="rx-instructions">
+                <strong>Prescribed Medications & Regimen:</strong><br>
+                ${rx.medicines || 'Tab. Amoxicillin 500mg PO TDS × 5 days after food. Tab. Paracetamol 650mg PO PRN for fever.'}
+              </div>
+              <div class="rx-meta">
+                <span>Prescribed by: <strong>${rx.doctor_name}</strong> (${rx.specialty})</span>
+                <span>Encounter Date: ${rx.created_at ? new Date(rx.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' }) : 'Recent'}</span>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Render Invoices
+        const invTbody = document.getElementById('patient-invoices-tbody');
+        if (data.invoices.length === 0) {
+          invTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-dim);">No billing invoices issued.</td></tr>';
+        } else {
+          invTbody.innerHTML = data.invoices.map(inv => {
+            const isPaid = inv.status === 'PAID';
+            return `
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-navy);">${inv.invoice_number}</td>
+                <td>${inv.invoice_date}</td>
+                <td><span class="status-pill ${isPaid ? 'status-paid' : 'status-pending'}">${inv.status}</span></td>
+                <td style="font-weight: 700;">${formatINR(inv.total_amount)}</td>
+                <td style="font-family: var(--font-mono); color: var(--text-muted);">${inv.receipt_number || 'RCP-PENDING'}</td>
+                <td>
+                  <button class="btn btn-secondary btn-sm" onclick="viewTaxReceipt(${inv.invoice_id}, '${inv.invoice_number}', '${inv.invoice_date}', ${inv.total_amount}, '${inv.status}', '${inv.receipt_number || 'RCP-98234120'}')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    Official Receipt
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+      } catch (err) {
+        console.error('Failed to load patient profile:', err);
+        showAlert('Could not load patient records: ' + err.message, 'error');
+      }
+    }
+
+    async function handlePatientBooking(e) {
+      e.preventDefault();
+      const user = getAuthUser();
+      const btn = document.getElementById('btn-patient-book');
+      btn.disabled = true;
+
+      const payload = {
+        patientNumber: user ? user.patientNumber : 'DEMO-IN-001',
+        doctorId: document.getElementById('book-doctor').value,
+        date: document.getElementById('book-date').value,
+        time: document.getElementById('book-time').value,
+        reason: document.getElementById('book-reason').value.trim()
+      };
+
+      try {
+        const res = await apiCall('/patient/book', 'POST', payload);
+        showAlert('Appointment booked successfully! Recorded in database.', 'success');
+        document.getElementById('book-reason').value = '';
+        loadPatientData();
+      } catch (err) {
+        showAlert(err.message || 'Booking failed.', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function cancelAppointment(apptId) {
+      if (!confirm('Are you sure you want to cancel this scheduled appointment?')) return;
+      const user = getAuthUser();
+      try {
+        await apiCall('/patient/cancel', 'POST', {
+          appointmentId: apptId,
+          patientNumber: user ? user.patientNumber : 'DEMO-IN-001'
+        });
+        showAlert('Appointment cancelled.', 'success');
+        loadPatientData();
+      } catch (err) {
+        showAlert('Cancellation failed: ' + err.message, 'error');
+      }
+    }
+
+    function viewTaxReceipt(invId, invNumber, date, amount, status, rcpNumber) {
+      const user = getAuthUser();
+      const p = currentPatientData ? currentPatientData.patient : { full_name: user.displayName, patient_number: user.patientNumber };
+
+      const body = document.getElementById('receipt-modal-body');
+      body.innerHTML = `
+        <div class="tax-receipt-sheet">
+          <div class="receipt-header-row">
+            <div class="receipt-hospital-info">
+              <h3>ApexCare Memorial Hospital</h3>
+              <p>Facility 01 · Central Outpatient & Diagnostics Center</p>
+              <p>GSTIN: 37AAAAA0000A1Z5 · License: AP-MED-2024-8891</p>
+            </div>
+            <div class="receipt-meta-box">
+              <div style="font-weight: 700; color: var(--brand-navy); font-size: 13px;">TAX INVOICE & RECEIPT</div>
+              <div style="font-family: var(--font-mono); margin-top: 4px;"><strong>Inv:</strong> ${invNumber}</div>
+              <div style="font-family: var(--font-mono);"><strong>Receipt:</strong> ${rcpNumber}</div>
+              <div style="color: var(--text-dim); margin-top: 4px;">Date: ${date}</div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; background: var(--bg-subtle); padding: 12px 16px; border-radius: 8px;">
+            <div>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--text-dim); font-weight: 700;">Patient Details</div>
+              <div style="font-weight: 700; color: var(--brand-navy); margin-top: 2px;">${p.full_name}</div>
+              <div style="font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted);">MRN: ${p.patient_number}</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--text-dim); font-weight: 700;">Payment & Status</div>
+              <div style="margin-top: 2px;"><span class="status-pill ${status === 'PAID' ? 'status-paid' : 'status-pending'}">${status}</span></div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Mode: UPI / Electronic Clearing</div>
+            </div>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-subtle); background: var(--bg-subtle); text-align: left;">
+                <th style="padding: 8px 10px;">Item Description</th>
+                <th style="padding: 8px 10px; text-align: center;">Qty</th>
+                <th style="padding: 8px 10px; text-align: right;">Rate (₹)</th>
+                <th style="padding: 8px 10px; text-align: right;">Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid var(--border-subtle);">
+                <td style="padding: 10px;">Doctor OPD Consultation & Clinical Examination</td>
+                <td style="padding: 10px; text-align: center;">1</td>
+                <td style="padding: 10px; text-align: right;">500.00</td>
+                <td style="padding: 10px; text-align: right;">500.00</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border-subtle);">
+                <td style="padding: 10px;">Dispensary Medication & Treatment Charge</td>
+                <td style="padding: 10px; text-align: center;">1</td>
+                <td style="padding: 10px; text-align: right;">${(amount - 500 > 0 ? (amount - 500).toFixed(2) : '0.00')}</td>
+                <td style="padding: 10px; text-align: right;">${(amount - 500 > 0 ? (amount - 500).toFixed(2) : '0.00')}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" style="padding: 12px 10px; text-align: right; font-weight: 700; color: var(--brand-navy); font-size: 14px;">Total Received (₹):</td>
+                <td style="padding: 12px 10px; text-align: right; font-weight: 800; color: var(--primary); font-size: 15px;">${formatINR(amount)}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div class="receipt-stamp-box">
+            <div>
+              <p>Generated electronically from ClinicDesk Unified System.</p>
+              <p>Database: data/hospital.mv.db · No signature required.</p>
+            </div>
+            <div class="official-seal">
+              ✓ OFFICIAL CASHIER VERIFIED
+            </div>
+          </div>
+        </div>
+      `;
+      openModal('receipt-modal');
+    }
+  </script>
+</body>
+</html>
