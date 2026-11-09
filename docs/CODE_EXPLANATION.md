@@ -1,37 +1,51 @@
-# 🏥 Hospital Management System — Comprehensive Code & Viva Guide
-**Course:** Object-Oriented Programming through Java / Web Technologies  
-**Target Audience:** CSE 2nd Year, 1st Semester (SRM University AP)  
-**Authors:** Contributors to `Hospital_Management_System`
+# 🏥 ApexCare Clinical OS — Comprehensive Code, Architecture & Implementation Guide
+
+This document provides a line-by-line explanation of every component, design pattern, and architectural decision within the ApexCare Hospital Management System.
 
 ---
 
 ## 📑 Table of Contents
-1. [Architectural Overview & Academic Concepts](#1-architectural-overview--academic-concepts)
-2. [Database Layer (JDBC & Connection Management)](#2-database-layer-jdbc--connection-management)
+1. [Architectural Overview & Design Principles](#1-architectural-overview--design-principles)
+2. [Database Layer & Connection Lifecycle](#2-database-layer--connection-lifecycle)
 3. [Custom Exception Hierarchy](#3-custom-exception-hierarchy)
-4. [OOP Domain Models (Inheritance, Polymorphism & Encapsulation)](#4-oop-domain-models)
-5. [Interface Contracts & DAO Layer](#5-interface-contracts--dao-layer)
-6. [Web Server & REST Controller](#6-web-server--rest-controller)
-7. [Frontend Architecture (HTML5, CSS3 & JavaScript)](#7-frontend-architecture)
-8. [Common Lab Viva Questions & Model Answers](#8-common-lab-viva-questions--model-answers)
+4. [Domain Entities & OOP Principles](#4-domain-entities--oop-principles)
+5. [Interface Contracts & Data Access Objects (DAO)](#5-interface-contracts--data-access-objects-dao)
+6. [Concurrent Web Gateway & REST Routing](#6-concurrent-web-gateway--rest-routing)
+7. [Frontend Architecture & Clinical UX](#7-frontend-architecture--clinical-ux)
+8. [Technical Evaluation & Architectural Q&A](#8-technical-evaluation--architectural-qa)
 
 ---
 
-## 1. Architectural Overview & Academic Concepts
+## 1. Architectural Overview & Design Principles
 
-The system follows a strict **Layered MVC (Model-View-Controller) / DAO (Data Access Object) Pattern**:
-- **Presentation Layer (`webapp/`)**: Responsive HTML5 web portal with CSS3 design tokens and asynchronous JavaScript (`fetch` API).
-- **Controller Layer (`com.hospital.web`)**: Java `HttpServer` routing requests to REST endpoints and serving static web assets.
-- **Service & DAO Contracts (`com.hospital.interfaces`)**: Interfaces defining strict contracts for data persistence and financial calculations.
-- **Data Access Layer (`com.hospital.dao`)**: Parameterized JDBC SQL operations (`PreparedStatement`) with zero SQL injection risk.
-- **Domain Models (`com.hospital.models`)**: Encapsulated entities using abstract classes and inheritance (`Person` -> `Doctor`, `Patient`).
-- **Database Layer (`com.hospital.config`)**: Thread-safe Singleton database manager with embedded SQLite zero-setup configuration.
+ApexCare adopts a **Domain-Driven, Decoupled N-Tier Architecture**:
+
+```
+[ Web Browser Client (HTML5 / Vanilla JS / CSS3) ]
+                       ▲
+                       │ HTTP/1.1 (JSON / Form Data)
+                       ▼
+[ Gateway / Controller Layer (`com.hospital.web`) ]
+                       ▲
+                       │ DTOs / Domain Models
+                       ▼
+[ Business & DAO Layer (`com.hospital.dao` / `interfaces`) ]
+                       ▲
+                       │ Parameterized SQL (PreparedStatement)
+                       ▼
+[ Relational Persistence Layer (SQLite Engine / JDBC) ]
+```
+
+### Key Engineering Tenets:
+- **Zero Third-Party Runtime Bloat:** Employs standard JDK APIs (`com.sun.net.httpserver`, `java.sql.*`), eliminating fragile container configurations.
+- **Contract-First Development:** Core business rules (financial calculations, persistence operations) are formally defined through Java `interface` definitions before concrete implementation.
+- **Defensive Error Handling:** Employs domain-specific checked exceptions to enforce explicit error recovery at compile time.
 
 ---
 
-## 2. Database Layer (`com.hospital.config`)
+## 2. Database Layer & Connection Lifecycle
 
-### File: `DatabaseConfig.java`
+### File: `DatabaseConfig.java` (`com.hospital.config`)
 
 ```java
 public class DatabaseConfig {
@@ -39,23 +53,52 @@ public class DatabaseConfig {
     private static final String DB_FILE = "hospital.db";
     private static final String SQLITE_URL = "jdbc:sqlite:" + DB_FILE;
 ```
-- **What it does:** Manages database connectivity and schema initialization using the **Singleton Pattern**.
-- **How it works:**
-  1. `private static DatabaseConfig instance;` ensures only one instance exists across the entire JVM lifecycle.
-  2. The constructor is declared `private`, preventing other classes from creating new connection managers via `new DatabaseConfig()`.
-  3. `public static synchronized DatabaseConfig getInstance()` provides global, thread-safe access to the single instance.
-  4. In the constructor, `Class.forName("org.sqlite.JDBC");` loads the SQLite JDBC driver bytecode dynamically into JVM memory.
-  5. `initializeDatabase()` uses `CREATE TABLE IF NOT EXISTS` statements to build 5 relational tables (`patients`, `doctors`, `appointments`, `bills`, `medical_records`).
-  6. `seedInitialData()` automatically checks if tables are empty and injects realistic demonstration data so the system works out-of-the-box.
+- **Line-by-Line Breakdown:**
+  - `private static DatabaseConfig instance;`: Declares a single static reference variable to hold the sole instance of `DatabaseConfig` in JVM memory.
+  - `private static final String DB_FILE = "hospital.db";`: The filesystem name for the embedded relational database file.
+  - `private static final String SQLITE_URL = "jdbc:sqlite:" + DB_FILE;`: The standard JDBC connection string pointing to the embedded database.
+
+```java
+    private DatabaseConfig() {
+        try {
+            Class.forName("org.sqlite.JDBC");
+            initializeDatabase();
+        } catch (ClassNotFoundException e) { ... }
+    }
+```
 - **Why it was written this way:**
-  - *Academic Viva Question:* "Why use the Singleton pattern for the database?"
-  - *Answer:* Opening multiple database connection managers wastes memory and system socket handles. Singleton centralizes connection settings, ensuring all DAOs share consistent configuration and automated table initialization.
+  - Declaring the constructor `private` strictly implements the **Singleton Pattern**, preventing external callers from creating unmanaged instances with `new DatabaseConfig()`.
+  - `Class.forName("org.sqlite.JDBC")` dynamically registers the native driver class with `DriverManager`.
+  - Calls `initializeDatabase()` on startup to ensure all relational tables are constructed before incoming HTTP requests arrive.
+
+```java
+    public static synchronized DatabaseConfig getInstance() {
+        if (instance == null) {
+            instance = new DatabaseConfig();
+        }
+        return instance;
+    }
+```
+- **Function:** Thread-safe lazy initialization accessor.
+- **How it works:** The `synchronized` keyword ensures that if two concurrent threads invoke `getInstance()` simultaneously on cold boot, only one initializes the instance while the other waits, eliminating race conditions.
+
+```java
+    public Connection getConnection() throws DatabaseException {
+        try {
+            return DriverManager.getConnection(SQLITE_URL);
+        } catch (SQLException e) {
+            throw new DatabaseException("Failed to establish JDBC connection to database engine.", e);
+        }
+    }
+```
+- **Function:** Dispenses active JDBC connection handles.
+- **Why wrap in `DatabaseException`?** Encapsulates implementation-specific `SQLException` so higher architectural layers (controllers and services) remain decoupled from low-level SQL drivers.
 
 ---
 
-## 3. Custom Exception Hierarchy (`com.hospital.exceptions`)
+## 3. Custom Exception Hierarchy
 
-Instead of throwing generic `Exception` or `RuntimeException`, the system defines a clean hierarchy inheriting from `HospitalException`:
+### Package: `com.hospital.exceptions`
 
 ```
 java.lang.Exception (Checked)
@@ -67,153 +110,236 @@ java.lang.Exception (Checked)
              └── DatabaseException
 ```
 
-### Detailed Breakdown:
-1. **`HospitalException.java`**:
-   - *What:* Base checked exception extending `java.lang.Exception`.
-   - *Why:* Forces the compiler to check that callers handle hospital-specific domain failures using `try-catch` blocks.
-2. **`AppointmentConflictException.java`**:
-   - *Fields:* `doctorId`, `date`, `timeSlot`.
-   - *What & How:* Thrown when an appointment booking collides with an existing active booking for the same doctor at the same date and slot.
-   - *Why:* Prevents double-booking at the business-logic layer and maps cleanly to HTTP `409 Conflict`.
-3. **`InvalidBillingException.java`**:
-   - *What & How:* Thrown by `Bill.calculateFinalTotal()` if consultation fee is negative, discount exceeds 100%, or tax is negative.
-   - *Why:* Enforces domain integrity—financial calculations must never process invalid or negative numbers.
-4. **`PatientNotFoundException.java` & `DoctorNotFoundException.java`**:
-   - *What:* Thrown when queries for a specific ID return no database records.
-   - *Why:* Maps directly to HTTP `404 Not Found`.
-5. **`DatabaseException.java`**:
-   - *What:* Wraps lower-level `java.sql.SQLException`.
-   - *Why:* Decouples upper application layers from SQL-specific exceptions. If the underlying database changes from SQLite to MySQL or PostgreSQL, upper layers still catch `DatabaseException`.
+### 1. `HospitalException.java`
+```java
+public class HospitalException extends Exception {
+    public HospitalException(String message) { super(message); }
+    public HospitalException(String message, Throwable cause) { super(message, cause); }
+}
+```
+- **What:** Root checked exception for all healthcare domain errors.
+- **Why:** Forces calling methods to acknowledge potential domain failures via `throws` declarations or `try-catch` blocks.
+
+### 2. `AppointmentConflictException.java`
+```java
+public class AppointmentConflictException extends HospitalException {
+    private final String doctorId;
+    private final String date;
+    private final String timeSlot;
+
+    public AppointmentConflictException(String doctorId, String date, String timeSlot) {
+        super(String.format("Doctor %s is already booked on %s during slot %s.", doctorId, date, timeSlot));
+        this.doctorId = doctorId;
+        this.date = date;
+        this.timeSlot = timeSlot;
+    }
+    // Getters ...
+}
+```
+- **What & How:** Thrown when an appointment booking collides with an existing active booking for the same physician at the exact same date and time slot.
+- **Why:** Enforces transactional schedule exclusivity. In `ApiHandler`, this exception is intercepted and returned as an **HTTP 409 Conflict** status to notify the scheduling user.
+
+### 3. `InvalidBillingException.java`
+```java
+public class InvalidBillingException extends HospitalException {
+    public InvalidBillingException(String message) { super(message); }
+}
+```
+- **What & How:** Thrown by `Bill.calculateFinalTotal()` when financial arguments violate validation boundaries (e.g. negative charges, discount $> 100\%$, negative tax).
+- **Why:** Guarantees ledger integrity; the database will never record anomalous financial transactions.
 
 ---
 
-## 4. OOP Domain Models (`com.hospital.models`)
+## 4. Domain Entities & OOP Principles
+
+### Package: `com.hospital.models`
 
 ### A. Abstract Class: `Person.java`
-- **Core OOP Concepts:** **Abstraction** and **Encapsulation**.
-- **Key Code:**
-  ```java
-  public abstract class Person {
-      protected String id;
-      protected String name;
-      protected String phone;
-      protected int age;
-      ...
-      public abstract String getRole();
-  ```
-- **What & How:**
-  - Declared `abstract`, meaning you cannot do `new Person()`.
-  - Defines shared attributes for all human actors in the hospital (`id`, `name`, `email`, `phone`, `age`, `gender`).
-  - Has an abstract method `public abstract String getRole();` that subclasses *must* implement.
-  - Implements **Encapsulation** in `setAge(int age)`: checks `if (age < 0 || age > 130)` and throws `IllegalArgumentException`.
-- **Why:** Prevents duplicate code across `Patient` and `Doctor`, enforcing standard person attributes across the system.
+Demonstrates **Abstraction** and **Encapsulation**.
 
-### B. Subclasses: `Patient.java` and `Doctor.java`
-- **Core OOP Concepts:** **Inheritance** and **Polymorphism**.
-- **Key Code:**
-  ```java
-  public class Patient extends Person {
-      private String bloodGroup;
-      private String address;
-      ...
-      @Override
-      public String getRole() { return "PATIENT"; }
-  }
-  ```
-  ```java
-  public class Doctor extends Person {
-      private String specialization;
-      private double consultationFee;
-      ...
-      @Override
-      public String getRole() { return "DOCTOR"; }
-  }
-  ```
-- **What & How:**
-  - `extends Person` inherits all fields and methods from `Person`.
-  - Constructors call `super(id, name, email, phone, age, gender);` to initialize the base class state.
-  - Both override `getRole()` (Runtime Polymorphism).
-- **Why:** Demonstrates hierarchical domain modeling. A Doctor is-a Person; a Patient is-a Person.
+```java
+public abstract class Person {
+    protected String id;
+    protected String name;
+    protected String email;
+    protected String phone;
+    protected int age;
+    protected String gender;
+```
+- `public abstract class Person`: Cannot be directly instantiated. Serves as the generalized base template for any individual in the healthcare system.
+- `protected` fields: Accessible to derived classes (`Patient`, `Doctor`) without violating encapsulation from unrelated external packages.
+
+```java
+    public abstract String getRole();
+```
+- Abstract contract: Forces derived concrete subclasses to return their specific domain identity (`"PATIENT"` or `"DOCTOR"`), enabling **Runtime Polymorphism**.
+
+```java
+    public void setAge(int age) {
+        if (age < 0 || age > 130) {
+            throw new IllegalArgumentException("Invalid age: " + age + ". Age must be between 0 and 130.");
+        }
+        this.age = age;
+    }
+```
+- **Encapsulation:** Intercepts invalid mutations. Direct field assignment `person.age = -5` is blocked by access modifiers.
+
+### B. Derived Classes: `Patient.java` & `Doctor.java`
+Demonstrates **Inheritance** and **Polymorphism**.
+
+```java
+public class Patient extends Person {
+    private String bloodGroup;
+    private String address;
+    private String emergencyContact;
+    private String registeredDate;
+
+    public Patient(String id, String name, String email, String phone, int age, String gender,
+                   String bloodGroup, String address, String emergencyContact, String registeredDate) {
+        super(id, name, email, phone, age, gender);
+        this.bloodGroup = bloodGroup;
+        this.address = address;
+        this.emergencyContact = emergencyContact;
+        this.registeredDate = registeredDate;
+    }
+
+    @Override
+    public String getRole() {
+        return "PATIENT";
+    }
+}
+```
+- `super(...)`: Invokes the parent constructor, initializing inherited fields before assigning patient-specific attributes.
+- `@Override public String getRole()`: Concrete implementation fulfilling the abstract contract in `Person`.
 
 ### C. Financial Model: `Bill.java`
-- **Core OOP Concepts:** **Interface Implementation** & **Contract-Driven Programming**.
-- **Key Code:**
-  ```java
-  public class Bill implements Billable {
-      ...
-      @Override
-      public double calculateSubtotal() { return consultationFee + treatmentCharges + medicineCharges; }
-      @Override
-      public double calculateDiscountAmount() { return (calculateSubtotal() * discountPercent) / 100.0; }
-      @Override
-      public double calculateTaxAmount() { return ((calculateSubtotal() - calculateDiscountAmount()) * taxPercent) / 100.0; }
-      @Override
-      public double calculateFinalTotal() throws InvalidBillingException { ... }
-  ```
-- **What & How:** Implements all financial computation methods defined in `Billable`. Enforces validation before returning final total.
+Demonstrates **Interface Implementation** and **Business Logic Isolation**.
+
+```java
+public class Bill implements Billable {
+    ...
+    @Override
+    public double calculateSubtotal() {
+        return consultationFee + treatmentCharges + medicineCharges;
+    }
+
+    @Override
+    public double calculateDiscountAmount() {
+        return (calculateSubtotal() * discountPercent) / 100.0;
+    }
+
+    @Override
+    public double calculateTaxAmount() {
+        double discountedSubtotal = calculateSubtotal() - calculateDiscountAmount();
+        return (discountedSubtotal * taxPercent) / 100.0;
+    }
+
+    @Override
+    public double calculateFinalTotal() throws InvalidBillingException {
+        if (consultationFee < 0 || treatmentCharges < 0 || medicineCharges < 0) {
+            throw new InvalidBillingException("Billing charges cannot be negative numbers.");
+        }
+        if (discountPercent < 0 || discountPercent > 100) {
+            throw new InvalidBillingException("Discount percentage must be between 0% and 100%.");
+        }
+        double discounted = calculateSubtotal() - calculateDiscountAmount();
+        return Math.round((discounted + calculateTaxAmount()) * 100.0) / 100.0;
+    }
+}
+```
+- Strictly implements all four calculation contracts declared in `Billable`.
+- Enforces computational order: Gross $\rightarrow$ Apply Discount $\rightarrow$ Calculate GST on Net $\rightarrow$ Round to 2 decimal places.
 
 ---
 
-## 5. Interface Contracts & DAO Layer (`com.hospital.interfaces` & `com.hospital.dao`)
+## 5. Interface Contracts & Data Access Objects (DAO)
 
-### Why use DAOs with Interfaces?
-- The Interface defines **WHAT** operations can be performed (e.g., `addPatient`, `getPatientById`).
-- The DAO Implementation defines **HOW** operations are executed using JDBC and SQL queries.
-- If the university requires switching from SQLite to MySQL, only the connection URL and DAO implementations are touched—the controllers and services never change!
+### Package: `com.hospital.interfaces` & `com.hospital.dao`
 
-### Safe JDBC Execution with `PreparedStatement`:
+### Why Decouple with DAO Interfaces?
+- The Interface (`PatientDAO`, `AppointmentDAO`) specifies **WHAT** capabilities the persistence layer provides.
+- The Implementation (`PatientDAOImpl`, `AppointmentDAOImpl`) defines **HOW** those capabilities execute via JDBC and SQL.
+- If switching the database from SQLite to MySQL or PostgreSQL, the upper controllers (`ApiHandler`) remain untouched.
+
+### Safe Parameterized JDBC Implementation:
 Example from `PatientDAOImpl.java`:
 ```java
-String sql = "INSERT INTO patients (id, name, email, phone, age, gender, blood_group, address, emergency_contact, registered_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+String sql = "INSERT INTO patients (id, name, email, phone, age, gender, blood_group, address, emergency_contact, registered_date) " +
+             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 try (Connection conn = dbConfig.getConnection();
      PreparedStatement pstmt = conn.prepareStatement(sql)) {
     pstmt.setString(1, p.getId());
     pstmt.setString(2, p.getName());
-    ...
+    pstmt.setString(3, p.getEmail());
+    pstmt.setString(4, p.getPhone());
+    pstmt.setInt(5, p.getAge());
+    pstmt.setString(6, p.getGender());
+    pstmt.setString(7, p.getBloodGroup());
+    pstmt.setString(8, p.getAddress());
+    pstmt.setString(9, p.getEmergencyContact());
+    pstmt.setString(10, p.getRegisteredDate());
     pstmt.executeUpdate();
+} catch (SQLException e) {
+    throw new DatabaseException("Error inserting patient: " + e.getMessage(), e);
 }
 ```
-- **What & How:**
-  - `?` placeholders represent parameters.
-  - Parameter values are sent separately from the SQL statement structure.
-  - `try (...)` is **try-with-resources**: automatically closes `conn` and `pstmt` even if an exception occurs, avoiding connection pool leaks.
-- **Why:** **Prevents SQL Injection Attacks**. If an attacker inputs `' OR '1'='1`, `PreparedStatement` treats it purely as literal string data rather than executable SQL commands.
+- **`?` Parameter Placeholders:** Binds inputs separately from the compiled SQL structure, **completely neutralizing SQL Injection vectors**.
+- **`try (...)` (try-with-resources):** Implements `AutoCloseable` contract. Connections and statements are automatically freed even if execution raises a runtime error, preventing resource exhaustion.
+
+### Double-Booking Schedule Guard:
+In `AppointmentDAOImpl.java`:
+```java
+@Override
+public void bookAppointment(Appointment a) throws AppointmentConflictException, DatabaseException {
+    if (!isSlotAvailable(a.getDoctorId(), a.getAppointmentDate(), a.getTimeSlot())) {
+        throw new AppointmentConflictException(a.getDoctorId(), a.getAppointmentDate(), a.getTimeSlot());
+    }
+    // Proceed with INSERT ...
+}
+```
+- Queries active bookings for that doctor, date, and slot. If an active booking exists, execution is halted by throwing `AppointmentConflictException` before any write transaction occurs.
 
 ---
 
-## 6. Web Server & REST Controller (`com.hospital.web`)
+## 6. Concurrent Web Gateway & REST Routing
 
-### Embedded HTTP Architecture:
-- Uses `com.sun.net.httpserver.HttpServer` from Java standard library.
-- Starts a lightweight multi-threaded server on port `8088`.
-- Routes:
-  - `/` $\rightarrow$ `StaticFileHandler` (serves `index.html`, `patients.html`, `doctors.html`, `appointments.html`, `billing.html`, `records.html`, CSS, JS).
-  - `/api/*` $\rightarrow$ `ApiHandler` (processes JSON and Form submissions for all 5 hospital modules).
+### File: `Main.java` & `ApiHandler.java`
 
----
-
-## 7. Frontend Architecture (`webapp/`)
-
-- **Vanilla Modern JavaScript**: No heavy frameworks (React/Angular) required—uses native `async/await` and `fetch()` to call Java backend endpoints.
-- **CSS Design Tokens**: Clean hospital aesthetic with responsive grid and flexbox layouts.
-- **Real-Time Client Feedback**:
-  - Live billing subtotal, discount, and GST calculation preview.
-  - Conflict warning toasts when an appointment slot is already booked.
+```java
+HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+server.createContext("/api/", new ApiHandler());
+server.createContext("/", new StaticFileHandler(webappDir));
+server.setExecutor(Executors.newFixedThreadPool(16));
+server.start();
+```
+- **`HttpServer.create(...)`:** Starts an embedded HTTP/1.1 server using native Java standard library features.
+- **`Executors.newFixedThreadPool(16)`:** Configures a pool of 16 background threads to process incoming HTTP requests concurrently without blocking the main event loop.
+- **`ApiHandler`:** Parses incoming request bodies (JSON or URL-encoded form data), invokes appropriate DAO methods, catches domain exceptions, and emits JSON responses with standard HTTP status codes (`200 OK`, `201 Created`, `400 Bad Request`, `404 Not Found`, `409 Conflict`, `500 Server Error`).
 
 ---
 
-## 8. Common Lab Viva Questions & Model Answers
+## 7. Frontend Architecture & Clinical UX
 
-### Q1: What is the difference between Method Overloading and Method Overriding in this project?
-- **Overriding (Runtime Polymorphism):** In `Person`, `getRole()` is abstract. `Patient` and `Doctor` both provide their own specific implementations with `@Override`. The JVM determines which method to call at runtime based on the actual object instance.
-- **Overloading (Compile-Time Polymorphism):** In `PatientDAO`, `searchPatients(String keyword)` vs `getAllPatients()`, or constructors with different parameter signatures (`Person()` vs `Person(id, name, ...)`).
+### Directory: `webapp/`
+- **High Information Density:** Mirrors production Electronic Health Record systems (Epic, Cerner) with crisp typography, scannable tabular grids, patient initials avatars, and MRN monospace tags.
+- **Vector Icons:** SVG vector line icons (Stroke 1.8px) used exclusively instead of emojis.
+- **Point-of-Care Financial Receipts:** Interactive invoice generator with automated tax computation and a printable official hospital receipt modal (`window.print()`).
+- **Comprehensive EHR Viewer:** Clinical consultation logger with vitals tracking, structured prescriptions, and progress notes.
 
-### Q2: Why did you use `PreparedStatement` instead of `Statement`?
-1. **Security:** `PreparedStatement` pre-compiles the SQL query and binds parameters safely, completely preventing SQL Injection.
-2. **Performance:** The database engine parses and compiles the query execution plan once, reusing it for subsequent executions with different parameters.
+---
 
-### Q3: What is the purpose of `try-with-resources`?
-Introduced in Java 7, `try-with-resources` ensures that any object implementing `java.lang.AutoCloseable` (such as `Connection`, `PreparedStatement`, `ResultSet`, `InputStream`) is automatically closed when execution exits the `try` block, preventing database connection leaks and memory leaks.
+## 8. Technical Evaluation & Architectural Q&A
 
-### Q4: Why use an Interface like `Billable` instead of putting everything in `Bill`?
-An interface defines an abstract contract. If tomorrow the hospital introduces `PharmacySale`, `EmergencyAmbulanceCharge`, or `DiagnosticPackage`, all of them can implement `Billable` and be processed identically by billing calculators without modifying existing code (following the **Open/Closed Principle**).
+### Q1: How does this system prevent SQL Injection?
+**Answer:** Every single SQL interaction in the DAO layer strictly utilizes `PreparedStatement` with parameterized placeholders (`?`). The SQL query template is pre-compiled by the database engine, and user inputs are bound strictly as data values, making it impossible for user input to alter the syntactic structure of the query.
+
+### Q2: What demonstrates Polymorphism in this codebase?
+**Answer:**
+1. **Runtime Polymorphism:** Overriding the abstract `getRole()` method in `Person`. When invoking `person.getRole()` on a reference of type `Person`, the JVM invokes either `Patient.getRole()` (`"PATIENT"`) or `Doctor.getRole()` (`"DOCTOR"`) depending on the runtime instance.
+2. **Compile-Time Polymorphism:** Method and constructor overloading, such as `Person()` vs `Person(id, name, ...)`, and `HospitalException(message)` vs `HospitalException(message, cause)`.
+
+### Q3: Why use an Interface (`Billable`) for financial calculations?
+**Answer:** The `Billable` interface establishes a formal contract for financial calculation methods. Decoupling the calculation rules from the storage entity allows new billable items (e.g. `EmergencyService`, `RadiologyPackage`) to implement `Billable` and be processed by the financial engine without modifying existing classes, adhering to the **Open/Closed Principle**.
+
+### Q4: Why is `DatabaseConfig` implemented as a Singleton?
+**Answer:** Managing database connectivity through a central Singleton ensures that connection properties, table initialization DDL, and connection pooling are unified across all DAO instances, eliminating duplicate driver registrations and resource conflicts.

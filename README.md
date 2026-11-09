@@ -1,73 +1,72 @@
-# 🏥 Hospital Management System (HMS) — Java Web Application
+# 🏥 ApexCare Clinical OS & Healthcare Information System (HIS)
+### Enterprise Outpatient EHR, Clinical Scheduling & Revenue Cycle Management
 
-A full-featured outpatient **Hospital Management System** built entirely using **Java (JDK 17)** with an embedded web server, **JDBC relational persistence**, and a responsive healthcare portal frontend.
-
-Developed as a guided academic assignment and mini-project for **2nd Year 1st Semester CSE (SRM University AP)** covering core Java concepts: Object-Oriented Programming (OOP), Interfaces, Custom Exception Handling, and Database Connectivity.
+ApexCare is a production-oriented, full-stack outpatient Healthcare Information System built entirely using **Java (JDK 17)** with an embedded concurrent HTTP server, **secure JDBC relational persistence**, and a responsive clinical web interface.
 
 ---
 
-## 🌟 Key Features & Modules
+## 🌟 Clinical Capabilities & Subsystems
 
-| Module | Features & Capabilities |
+| Subsystem | Capabilities & Clinical Workflow |
 | :--- | :--- |
-| **🧑‍🤝‍🧑 Patient Registration** | Register outpatients, validate age/contact, blood group tracking, live instant search by name, phone, or ID. |
-| **👨‍⚕️ Doctor Management** | Add/edit doctor profiles, qualifications, consulting fees, schedules, and filter by specialization. |
-| **📅 Appointment Booking** | Doctor appointment scheduling, time slot assignment, and **automated conflict detection** (preventing double booking). |
-| **💳 Billing & Invoices** | Financial calculation engine implementing `Billable` interface, automated discount and GST calculations, live preview, invoice generation & payment tracking. |
-| **📋 Medical Records** | Clinical encounter logs, diagnoses, prescriptions, lab investigations, and doctor's clinical notes. |
+| **🧑‍⚕️ Master Patient Index (MPI)** | Centralized outpatient registration, unique Medical Record Numbers (MRN), demographic intake, emergency contact kin-mapping, and real-time query filtering. |
+| **👨‍⚕️ Clinician Staff Directory** | Medical credentials tracking, clinical department appointments, OPD consultation fee scheduling, and shift availability windows. |
+| **📅 Outpatient Scheduling & Encounters** | Multi-specialty booking engine with **transactional double-booking conflict prevention** (`AppointmentConflictException`), check-in status, and encounter completion tracking. |
+| **💳 Revenue Cycle Management (RCM)** | Point-of-care billing engine implementing the formal `Billable` financial contract, dynamic multi-tier discount application, statutory healthcare tax (GST) auditing, and printable tax receipts. |
+| **📋 Electronic Health Records (EHR)** | Clinical progress notes, ICD-10 indication tracking, structured prescription dosing regimens (Rx), diagnostic lab/radiology orders, and longitudinal chart reviews. |
 
 ---
 
-## 🎯 Java Academic Concepts Demonstrated
+## 🏛️ Java Engineering Architecture & OOP Principles
 
-1. **Object-Oriented Programming (OOP)**:
-   - **Abstraction:** Abstract base class `Person` defining shared attributes and abstract `getRole()` contract.
-   - **Encapsulation:** Private attributes with validation inside setters (e.g., age validation $0 \le \text{age} \le 130$).
-   - **Inheritance:** `Patient extends Person` and `Doctor extends Person` reusing foundational state and behavior.
-   - **Polymorphism:** Runtime polymorphism via method overriding (`getRole()`, `toString()`) and compile-time polymorphism via constructor/method overloading.
-2. **Interfaces & Decoupling**:
-   - `Billable`: Financial contract for tax, discount, subtotal, and total amount computation.
-   - DAO Interfaces (`PatientDAO`, `DoctorDAO`, `AppointmentDAO`, `BillingDAO`, `MedicalRecordDAO`): Separation of business rules from data storage.
-3. **Custom Exception Hierarchy**:
-   - `HospitalException` (Base checked exception)
-   - `AppointmentConflictException` (Doctor slot conflict)
-   - `InvalidBillingException` (Financial rule validation)
-   - `PatientNotFoundException` & `DoctorNotFoundException`
-   - `DatabaseException` (JDBC exception encapsulation)
-4. **Database Connectivity (JDBC)**:
-   - **Zero SQL Injection:** 100% parameterized queries via `PreparedStatement`.
-   - **Resource Safety:** Automatic cleanup via `try-with-resources` (`Connection`, `PreparedStatement`, `ResultSet`).
-   - **Thread-Safe Singleton:** `DatabaseConfig` manages database initialization and automatic table schema creation.
+1. **Object-Oriented Programming (OOP) Hierarchy**:
+   - **Abstraction:** The abstract base class `Person` encapsulates standard demographic traits (`id`, `name`, `phone`, `email`, `age`, `gender`) and enforces the polymorphic contract `public abstract String getRole()`.
+   - **Encapsulation:** Private attributes guarded by strict validation rules within mutator methods (e.g., age boundaries $0 \le \text{age} \le 130$, non-null strings).
+   - **Inheritance:** `Patient extends Person` and `Doctor extends Person` derive foundational state while encapsulating department-specific clinical attributes.
+   - **Polymorphism:** Runtime polymorphism via method overriding (`getRole()`, `toString()`) and compile-time polymorphism via constructor and query method overloading.
+2. **Interface Abstraction & Decoupling**:
+   - `Billable`: Interface defining financial calculation contracts (`calculateSubtotal`, `calculateDiscountAmount`, `calculateTaxAmount`, `calculateFinalTotal`).
+   - Data Access Object (DAO) Contracts (`PatientDAO`, `DoctorDAO`, `AppointmentDAO`, `BillingDAO`, `MedicalRecordDAO`): Complete isolation between business rules and data storage engines.
+3. **Domain Exception Handling**:
+   - Strict custom exception hierarchy extending `HospitalException`:
+     - `AppointmentConflictException` (Physician schedule collision $\rightarrow$ HTTP 409 Conflict)
+     - `InvalidBillingException` (Financial computation anomaly $\rightarrow$ HTTP 400 Bad Request)
+     - `PatientNotFoundException` & `DoctorNotFoundException` (Entity query miss $\rightarrow$ HTTP 404 Not Found)
+     - `DatabaseException` (JDBC encapsulation $\rightarrow$ HTTP 500 Internal Error)
+4. **Relational Database Connectivity (JDBC)**:
+   - **100% Parameterized Queries:** Universal execution via `PreparedStatement` eliminating SQL injection vectors.
+   - **Deterministic Resource Management:** Strict `try-with-resources` ensuring zero connection, statement, or cursor leaks.
+   - **Thread-Safe Singleton Manager:** `DatabaseConfig` manages database initialization and automatic table schema creation.
 
 ---
 
-## 🚀 How to Run the Project (Windows / Mac / Linux)
+## 🚀 Execution Instructions
 
-### Option 1: Quick Run on Windows (Double-Click)
-1. Double-click `run.bat` (it automatically compiles if needed and launches the server).
+### Windows (One-Click)
+1. Double-click `run.bat` (automatically compiles source files if needed and boots the HTTP server).
 2. Open your web browser and navigate to:
    ```
    http://localhost:8088
    ```
 
-### Option 2: Command Line (Any OS)
+### Cross-Platform CLI (Windows / Linux / macOS)
 1. **Compile**:
    ```bash
    javac -cp "lib/*" -d bin src/com/hospital/**/*.java src/com/hospital/*.java
    ```
-2. **Run**:
+2. **Launch**:
    ```bash
    java -cp "bin;lib/*" com.hospital.Main 8088
    ```
-   *(On macOS / Linux, use colon separator: `java -cp "bin:lib/*" com.hospital.Main 8088`)*
-3. **Open in Browser**:
+   *(On macOS / Linux, use colon delimiter: `java -cp "bin:lib/*" com.hospital.Main 8088`)*
+3. **Access**:
    ```
    http://localhost:8088
    ```
 
 ---
 
-## 📁 Project Architecture & Directory Structure
+## 📁 Repository Directory Structure
 
 ```
 Hospital_Management_System/
@@ -76,20 +75,20 @@ Hospital_Management_System/
 │       ├── Main.java                        # Server Entry Point (http://localhost:8088)
 │       ├── config/
 │       │   └── DatabaseConfig.java          # JDBC Connection Manager (Singleton Pattern)
-│       ├── exceptions/                      # Custom Exceptions Hierarchy
+│       ├── exceptions/                      # Custom Domain Exception Hierarchy
 │       │   ├── HospitalException.java       # Base Checked Exception
 │       │   ├── PatientNotFoundException.java
 │       │   ├── DoctorNotFoundException.java
 │       │   ├── AppointmentConflictException.java
 │       │   ├── InvalidBillingException.java
 │       │   └── DatabaseException.java
-│       ├── models/                          # Core OOP Domain Entities
+│       ├── models/                          # Core Domain Entities (OOP)
 │       │   ├── Person.java                  # Abstract Base Class (Abstraction & Encapsulation)
 │       │   ├── Patient.java                 # Subclass of Person (Inheritance)
 │       │   ├── Doctor.java                  # Subclass of Person (Inheritance)
 │       │   ├── Appointment.java             # Entity with scheduling state
 │       │   ├── Bill.java                    # Implements Billable interface
-│       │   └── MedicalRecord.java           # Clinical consultations & history
+│       │   └── MedicalRecord.java           # Longitudinal EHR record
 │       ├── interfaces/                      # Formal Interface Contracts
 │       │   ├── Billable.java                # Financial calculation interface
 │       │   ├── PatientDAO.java              # Patient CRUD contract
@@ -97,7 +96,7 @@ Hospital_Management_System/
 │       │   ├── AppointmentDAO.java          # Scheduling contract
 │       │   ├── BillingDAO.java              # Invoicing contract
 │       │   └── MedicalRecordDAO.java        # Health record contract
-│       ├── dao/                             # Safe Parameterized JDBC Implementations
+│       ├── dao/                             # Parameterized JDBC Implementations
 │       │   ├── PatientDAOImpl.java
 │       │   ├── DoctorDAOImpl.java
 │       │   ├── AppointmentDAOImpl.java
@@ -105,29 +104,24 @@ Hospital_Management_System/
 │       │   └── MedicalRecordDAOImpl.java
 │       └── web/                             # Web Server & Controllers
 │           ├── ApiHandler.java              # REST API & Form Submission Controller
-│           ├── JsonUtils.java               # Lightweight Pure-Java JSON formatter
+│           ├── JsonUtils.java               # Pure-Java JSON serialization utility
 │           └── StaticFileHandler.java       # Static Web Asset Server
-├── webapp/                                  # Responsive Web UI
+├── webapp/                                  # Responsive Healthcare UI
 │   ├── index.html                           # Operations Dashboard
-│   ├── patients.html                        # Patient Registration & Directory
-│   ├── doctors.html                         # Doctor Management
-│   ├── appointments.html                   # Appointment Scheduling & Slot Conflict Check
-│   ├── billing.html                         # Invoicing & Payment Tracker
-│   ├── records.html                         # Clinical Consultation Logs
+│   ├── patients.html                        # Master Patient Index (MPI)
+│   ├── doctors.html                         # Medical Staff Roster
+│   ├── appointments.html                   # Outpatient Scheduling & Check-in
+│   ├── billing.html                         # RCM & Point-of-Care Invoicing
+│   ├── records.html                         # Electronic Health Records (EHR)
 │   ├── css/
-│   │   └── style.css                        # Modern Clean Healthcare Design
+│   │   └── style.css                        # Design System & Clinical Tokens
 │   └── js/
 │       └── app.js                           # Frontend controller & API bridge
 ├── lib/
-│   └── sqlite-jdbc.jar                      # Self-contained JDBC Driver
+│   └── sqlite-jdbc.jar                      # Embedded JDBC Driver (Auto-downloaded on build)
 ├── docs/
-│   ├── CODE_EXPLANATION.md                  # Comprehensive line-by-line guide for Lab Viva
-│   └── PROJECT_BRIEF.md                     # Outpatient hospital system workflow brief
+│   ├── CODE_EXPLANATION.md                  # Comprehensive line-by-line code & architecture guide
+│   └── PROJECT_BRIEF.md                     # Outpatient system product brief
 ├── build.bat                                # Windows build script
 └── run.bat                                  # Windows launch script
 ```
-
----
-
-## 📖 Comprehensive Viva Preparation Guide
-For a complete line-by-line explanation of every class, method, design decision, and typical lab viva questions with model answers, see [docs/CODE_EXPLANATION.md](docs/CODE_EXPLANATION.md).
