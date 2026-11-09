@@ -1,0 +1,46 @@
+plugins {
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+}
+
+dependencies {
+    implementation platform('org.springframework.boot:spring-boot-dependencies:3.5.16')
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+}
+
+javafx {
+    version = '17.0.8'
+    modules = ['javafx.controls']
+}
+
+application {
+    mainClass = 'com.hospital.management.desktop.HospitalDesktopApp'
+}
+
+tasks.register('packageWindowsApp', Exec) {
+    group = 'distribution'
+    description = 'Build a portable Windows app image with a bundled Java runtime.'
+    dependsOn tasks.named('installDist')
+
+    doFirst {
+        def jpackage = new File(System.getProperty('java.home'), 'bin/jpackage.exe')
+        if (!jpackage.isFile()) {
+            throw new GradleException('A Windows JDK with jpackage is required to create the portable desktop app.')
+        }
+        def inputDirectory = layout.buildDirectory.dir('install/desktop/lib').get().asFile
+        def outputDirectory = layout.buildDirectory.dir('package').get().asFile
+        def appImageDirectory = new File(outputDirectory, 'ClinicDesk')
+        delete appImageDirectory
+        outputDirectory.mkdirs()
+
+        commandLine jpackage.absolutePath,
+                '--type', 'app-image',
+                '--name', 'ClinicDesk',
+                '--app-version', project.version.toString(),
+                '--input', inputDirectory.absolutePath,
+                '--main-jar', tasks.named('jar').get().archiveFileName.get(),
+                '--main-class', application.mainClass.get(),
+                '--dest', outputDirectory.absolutePath
+    }
+}

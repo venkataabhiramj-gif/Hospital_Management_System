@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hospital
+      POSTGRES_USER: hms
+      POSTGRES_PASSWORD: ${HMS_DATABASE_PASSWORD:?Set HMS_DATABASE_PASSWORD in .env}
+    volumes:
+      - hospital-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hms -d hospital"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      HMS_DATABASE_URL: jdbc:postgresql://db:5432/hospital
+      HMS_DATABASE_USERNAME: hms
+      HMS_DATABASE_PASSWORD: ${HMS_DATABASE_PASSWORD:?Set HMS_DATABASE_PASSWORD in .env}
+      HMS_ADMIN_USERNAME: ${HMS_ADMIN_USERNAME:-admin}
+      HMS_ADMIN_PASSWORD: ${HMS_ADMIN_PASSWORD:?Set HMS_ADMIN_PASSWORD in .env}
+      HMS_SERVER_PORT: 8080
+    ports:
+      - "127.0.0.1:${HMS_SERVER_PORT:-8080}:8080"
+
+volumes:
+  hospital-postgres:

@@ -13,8 +13,31 @@ See [the project brief](docs/PROJECT_BRIEF.md) for the agreed scope, workflow, a
 
 ## Project status
 
-Planning. The repository does not yet contain application code. A production-use goal requires implementation, testing, security and operational work, review with qualified healthcare users, and a controlled pilot. This repository does not claim that the application is production-ready or legally compliant.
+Assignment implementation in progress. The Java API and Windows desktop client compile, and the Android Java client compiles. A clean H2 database has applied all six migrations, and the synthetic staff-to-payment API workflow has been exercised. This is not a verified clinical product and does not claim production readiness or legal compliance. See the [assignment demo sequence](docs/ASSIGNMENT_DEMO.md), [operations and current limits](docs/OPERATIONS.md), and the [project brief](docs/PROJECT_BRIEF.md).
 
-## Learning approach
+## Start locally
 
-The system will be developed incrementally. Each milestone will introduce its concepts and explain the purpose of the code and tools before expanding the application.
+Use JDK 17. For a fresh development database, set an initial administrator password, then start the API and Windows app in separate PowerShell windows:
+
+```powershell
+$env:HMS_ADMIN_PASSWORD = 'choose-a-unique-password-of-at-least-12-characters'
+.\gradlew.bat :server:bootRun
+```
+
+```powershell
+.\gradlew.bat :desktop:run
+```
+
+To create a portable Windows app folder with its own Java runtime:
+
+```powershell
+.\gradlew.bat :desktop:packageWindowsApp
+```
+
+The app image is created under `desktop/build/package/ClinicDesk/`.
+
+The Android project is in `android/`. Setup, database, Compose deployment, HTTPS, and backup guidance is in [docs/OPERATIONS.md](docs/OPERATIONS.md).
+
+## Learning guide
+
+The requested detailed line-by-line explanations will be added as a consolidated guide after the implementation work is complete.

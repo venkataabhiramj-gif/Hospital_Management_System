@@ -1,0 +1,10 @@
+.git
+.gradle
+.gradle-user
+**/build
+android/.gradle
+android/local.properties
+data
+*.db
+*.mv.db
+.env
