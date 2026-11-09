@@ -42,7 +42,7 @@ public class HospitalDesktopApp extends Application {
     }
 
     private VBox login(Stage stage) {
-        TextField host = new TextField("http://localhost:8080"); host.setPromptText("Clinic service address");
+        TextField host = new TextField("http://localhost:8088"); host.setPromptText("Clinic service address");
         TextField username = new TextField(); username.setPromptText("Staff username");
         PasswordField password = new PasswordField(); password.setPromptText("Password");
         Label title = new Label("Clinic Desk"); title.getStyleClass().add("login-title");

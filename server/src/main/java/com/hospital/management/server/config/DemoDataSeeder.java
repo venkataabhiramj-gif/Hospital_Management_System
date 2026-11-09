@@ -31,7 +31,7 @@ public class DemoDataSeeder implements ApplicationRunner {
     private final String password;
 
     public DemoDataSeeder(JdbcTemplate jdbc, PasswordEncoder encoder,
-                          @Value("${HMS_DEMO_STAFF_PASSWORD:}") String password) {
+                          @Value("${hms.demo.staff-password:${HMS_DEMO_STAFF_PASSWORD:DemoStaffPass123!}}") String password) {
         this.jdbc = jdbc;
         this.encoder = encoder;
         this.password = password;

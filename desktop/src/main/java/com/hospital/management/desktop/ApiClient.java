@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 final class ApiClient {
     private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     private final ObjectMapper json = new ObjectMapper().findAndRegisterModules();
-    private String base = "http://localhost:8080";
+    private String base = "http://localhost:8088";
     private String auth;
 
     CompletableFuture<String> login(String host, String username, String password) {

@@ -1,13 +1,9 @@
 @echo off
 echo ========================================================
-echo    Starting Hospital Management System Web Portal
+echo    Starting ApexCare Unified Clinical Server
+echo    (Shared Database for Desktop, Android & Web Portal)
 echo ========================================================
 
-if not exist bin (
-    echo [INFO] bin folder not found. Building project first...
-    call build.bat
-)
-
-echo Starting Java HTTP Server on http://localhost:8088 ...
-java -cp "bin;lib/*" com.hospital.Main 8088
+echo Server starting on http://localhost:8080/ ...
+call gradlew.bat :server:bootRun
 pause

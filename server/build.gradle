@@ -16,5 +16,6 @@ dependencies {
 }
 
 tasks.named('bootRun') {
-    systemProperty 'spring.profiles.active', System.getProperty('spring.profiles.active', 'dev')
+    systemProperty 'spring.profiles.active', System.getProperty('spring.profiles.active', 'dev,demo')
+    workingDir = rootProject.projectDir
 }

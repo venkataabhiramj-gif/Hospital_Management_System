@@ -42,7 +42,7 @@ public class MainActivity extends Activity {
         heading.addView(brand);heading.addView(pageTitle);LinearLayout.LayoutParams hp=(LinearLayout.LayoutParams)heading.getLayoutParams();hp.bottomMargin=dp(16);heading.setLayoutParams(hp);
     }
     private void showLogin() {
-        base("Welcome back"); EditText address=field("Service address", "http://10.0.2.2:8080"); EditText username=field("Staff username",""); EditText password=field("Password",""); password.setInputType(129);
+        base("Welcome back"); EditText address=field("Service address", "http://10.0.2.2:8088"); EditText username=field("Staff username",""); EditText password=field("Password",""); password.setInputType(129);
         Button signIn=button("Sign in"); signIn.setOnClickListener(v->{
             try {
                 URI endpoint=URI.create(address.getText().toString().trim()).normalize();

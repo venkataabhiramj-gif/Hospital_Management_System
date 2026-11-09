@@ -5,17 +5,26 @@ const API_BASE = '/api';
 async function apiCall(endpoint, method = 'GET', data = null) {
   const options = {
     method,
-    headers: { 'Content-Type': 'application/json' }
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
   };
-  if (data && (method === 'POST' || method === 'PUT')) {
+  if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
     options.body = JSON.stringify(data);
   }
 
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, options);
-    const result = await res.json();
+    const text = await res.text();
+    let result = {};
+    try {
+      result = text ? JSON.parse(text) : {};
+    } catch (parseErr) {
+      result = { raw: text };
+    }
     if (!res.ok) {
-      throw new Error(result.error || `Error ${res.status}: ${res.statusText}`);
+      throw new Error(result.error || result.message || `Error ${res.status}: ${res.statusText}`);
     }
     return result;
   } catch (err) {
@@ -184,9 +193,21 @@ async function registerPatient(event) {
     data.id = 'MRN-' + Math.floor(10000 + Math.random() * 90000);
   }
 
+  const age = parseInt(data.age, 10) || 30;
+  const birthYear = new Date().getFullYear() - age;
+  const dateOfBirth = `${birthYear}-01-15`;
+
+  const payload = {
+    fullName: data.name,
+    dateOfBirth: dateOfBirth,
+    phone: data.phone || '',
+    duplicateReviewAcknowledged: true,
+    duplicateReviewReason: 'Web patient intake'
+  };
+
   try {
-    const res = await apiCall('/patients', 'POST', data);
-    showAlert(res.message, 'success');
+    const res = await apiCall('/patients', 'POST', payload);
+    showAlert('Patient registered in centralized database: ' + (res.fullName || data.name), 'success');
     closeModal('patient-modal');
     form.reset();
     initPatients();
@@ -273,13 +294,9 @@ async function addDoctor(event) {
   const formData = new FormData(form);
   const data = Object.fromEntries(formData.entries());
 
-  if (!data.id || data.id.trim() === '') {
-    data.id = 'DOC-' + Math.floor(400 + Math.random() * 500);
-  }
-
   try {
-    const res = await apiCall('/doctors', 'POST', data);
-    showAlert(res.message, 'success');
+    const res = await apiCall('/doctors/web', 'POST', data);
+    showAlert(res.message || 'Doctor registered in central directory', 'success');
     closeModal('doctor-modal');
     form.reset();
     initDoctors();
@@ -379,22 +396,45 @@ async function bookAppointment(event) {
   const formData = new FormData(form);
   const data = Object.fromEntries(formData.entries());
 
+  let time = data.timeSlot || '09:00 AM';
+  let hour = 9, minute = 0;
+  const match = time.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+  if (match) {
+    hour = parseInt(match[1], 10);
+    minute = parseInt(match[2], 10);
+    if (/PM/i.test(match[3]) && hour < 12) hour += 12;
+    if (/AM/i.test(match[3]) && hour === 12) hour = 0;
+  }
+  const dateStr = data.appointmentDate || new Date().toISOString().split('T')[0];
+  const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`;
+  const startsAt = `${dateStr}T${timeStr}+05:30`;
+
+  const payload = {
+    patientNumber: data.patientId,
+    doctorId: parseInt(data.doctorId, 10),
+    startsAt: startsAt,
+    visitType: 'APPOINTMENT',
+    reason: data.reason || 'General Outpatient Care'
+  };
+
   try {
-    const res = await apiCall('/appointments', 'POST', data);
-    showAlert(res.message, 'success');
+    const res = await apiCall('/appointments', 'POST', payload);
+    showAlert('Encounter booked in central database (#ENC-' + (res.id || '') + ')', 'success');
     closeModal('appointment-modal');
     form.reset();
     initAppointments();
   } catch (err) {
-    // Shows conflict exception clearly
     showAlert(err.message, 'danger');
   }
 }
 
 async function updateApptStatus(id, status) {
   try {
-    const res = await apiCall('/appointments', 'POST', { action: 'updateStatus', id: id.toString(), status });
-    showAlert(res.message, 'success');
+    const res = await apiCall(`/appointments/${id}/status`, 'PATCH', {
+      status: status,
+      reason: 'Status updated via clinical web portal'
+    });
+    showAlert('Encounter status updated to ' + status, 'success');
     initAppointments();
   } catch (err) {
     showAlert(err.message, 'danger');
