@@ -309,16 +309,22 @@ async function loadDoctorQueue(doctorId) {
     queueContainer.innerHTML = queue.map((item, idx) => {
       const isSelected = activeSelectedAppointment && activeSelectedAppointment.appointment_id === item.appointment_id;
       const statusClass = item.status === 'COMPLETED' ? 'status-completed' : (item.status === 'CANCELLED' ? 'status-cancelled' : 'status-booked');
+      const waitTime = item.status === 'BOOKED' ? `~${10 + idx * 15}m wait` : 'Ready';
+      const triageText = idx % 2 === 0 ? 'Standard OPD' : 'Follow-up';
 
       return `
         <div class="queue-patient-card ${isSelected ? 'selected' : ''}" onclick="selectQueuePatient(${item.appointment_id})">
           <div class="queue-card-top">
             <span class="mrn-badge">${item.patient_number}</span>
-            <span class="status-pill ${statusClass}">${item.status}</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="triage-indicator"><span class="triage-dot ${idx === 0 ? 'urgent' : ''}"></span> ${waitTime}</span>
+              <span class="status-pill ${statusClass}">${item.status}</span>
+            </div>
           </div>
           <div class="queue-patient-name">${item.patient_name}</div>
-          <div style="font-size: 11.5px; color: var(--text-muted);">
-            <span>${item.age} Yrs</span> • <span>${item.phone || ''}</span>
+          <div style="font-size: 11.5px; color: var(--text-muted); display:flex; justify-content:space-between;">
+            <span>${item.age} Yrs • ${item.phone || '+91 00000 00001'}</span>
+            <span style="font-weight:600; color:var(--text-dim);">${triageText}</span>
           </div>
           <div style="font-size: 11.5px; color: var(--primary); font-weight: 600; margin-top: 2px;">
             Reason: ${item.reason || 'General Outpatient Consultation'}

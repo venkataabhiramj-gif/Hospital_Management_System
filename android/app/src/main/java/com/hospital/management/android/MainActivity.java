@@ -37,7 +37,7 @@ public class MainActivity extends Activity {
             view.setPadding(left+insetLeft,top+insetTop,right+insetRight,bottom+insetBottom);return insets;
         });
         scroll.addView(page); setContentView(scroll);
-        LinearLayout heading=card();TextView brand=new TextView(this);brand.setText("CLINIC DESK  /  STAFF WORKSPACE");brand.setTextColor(teal);brand.setTextSize(11);brand.setTypeface(null,1);
+        LinearLayout heading=card();TextView brand=new TextView(this);brand.setText("APEXCARE MEMORIAL HOSPITAL  ·  CLINICDESK");brand.setTextColor(teal);brand.setTextSize(11);brand.setTypeface(null,1);
         TextView pageTitle=new TextView(this);pageTitle.setText(title);pageTitle.setTextColor(ink);pageTitle.setTextSize(26);pageTitle.setTypeface(null,1);
         heading.addView(brand);heading.addView(pageTitle);LinearLayout.LayoutParams hp=(LinearLayout.LayoutParams)heading.getLayoutParams();hp.bottomMargin=dp(16);heading.setLayoutParams(hp);
     }

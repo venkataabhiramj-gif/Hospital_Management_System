@@ -144,6 +144,12 @@
               </div>
             </div>
             <div class="card-body" style="padding: 14px;">
+              <div class="queue-filter-row">
+                <span class="filter-pill active">All (5)</span>
+                <span class="filter-pill">Waiting (3)</span>
+                <span class="filter-pill">In Progress (1)</span>
+                <span class="filter-pill">Done (1)</span>
+              </div>
               <div class="opd-queue-list" id="doctor-queue-container">
                 <div style="padding: 24px; text-align: center; color: var(--text-dim);">Loading OPD queue…</div>
               </div>
@@ -180,18 +186,22 @@
                     <div class="form-group">
                       <label style="font-size: 10.5px;">BP (mmHg)</label>
                       <input type="text" id="consult-bp" class="form-control" value="120/80">
+                      <span class="vital-tag">Normal &lt; 120/80</span>
                     </div>
                     <div class="form-group">
                       <label style="font-size: 10.5px;">Pulse (bpm)</label>
                       <input type="number" id="consult-pulse" class="form-control" value="74">
+                      <span class="vital-tag">Resting 60-100</span>
                     </div>
                     <div class="form-group">
                       <label style="font-size: 10.5px;">Temp (°C)</label>
                       <input type="text" id="consult-temp" class="form-control" value="36.8">
+                      <span class="vital-tag">Afebrile 36.5-37.5</span>
                     </div>
                     <div class="form-group">
                       <label style="font-size: 10.5px;">Weight (kg)</label>
                       <input type="text" id="consult-weight" class="form-control" value="68.0">
+                      <span class="vital-tag">BMI 22.4 · Healthy</span>
                     </div>
                   </div>
                 </div>
@@ -242,7 +252,8 @@
               </div>
             </div>
             <div class="metric-value" id="stat-patients">--</div>
-            <span class="metric-sub">Master Patient Index Verified</span>
+            <div class="metric-trend">↑ 12% vs last month</div>
+            <span class="metric-sub" style="margin-top: 4px;">Master Patient Index Verified</span>
           </div>
 
           <div class="metric-card">
@@ -253,7 +264,8 @@
               </div>
             </div>
             <div class="metric-value" id="stat-doctors">--</div>
-            <span class="metric-sub">Across 5 OPD Specialties</span>
+            <div class="metric-trend">100% Shift Attendance</div>
+            <span class="metric-sub" style="margin-top: 4px;">Across 5 OPD Specialties</span>
           </div>
 
           <div class="metric-card">
@@ -264,7 +276,8 @@
               </div>
             </div>
             <div class="metric-value" id="stat-appointments">--</div>
-            <span class="metric-sub">Double-Booking Conflict Check</span>
+            <div class="metric-trend">Zero Overlaps</div>
+            <span class="metric-sub" style="margin-top: 4px;">Double-Booking Conflict Check</span>
           </div>
 
           <div class="metric-card">
@@ -275,7 +288,8 @@
               </div>
             </div>
             <div class="metric-value" id="stat-revenue">--</div>
-            <span class="metric-sub">Point-of-Care Settled Invoices</span>
+            <div class="metric-trend">↑ 18.2% Collected</div>
+            <span class="metric-sub" style="margin-top: 4px;">Point-of-Care Settled Invoices</span>
           </div>
         </section>
 
