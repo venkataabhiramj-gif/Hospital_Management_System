@@ -22,11 +22,13 @@ public class WebPortalController {
     private final JdbcTemplate db;
     private final WorkflowController workflow;
     private final PasswordEncoder passwordEncoder;
+    private final com.hospital.management.server.service.AutomationService automationService;
 
-    public WebPortalController(JdbcTemplate db, WorkflowController workflow, PasswordEncoder passwordEncoder) {
+    public WebPortalController(JdbcTemplate db, WorkflowController workflow, PasswordEncoder passwordEncoder, com.hospital.management.server.service.AutomationService automationService) {
         this.db = db;
         this.workflow = workflow;
         this.passwordEncoder = passwordEncoder;
+        this.automationService = automationService;
     }
 
     @GetMapping("/dashboard")
@@ -81,6 +83,30 @@ public class WebPortalController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Patient record not found");
         }
         return Map.of("message", "Patient record archived successfully", "id", id);
+    }
+
+    @DeleteMapping("/appointments")
+    @Transactional
+    public Map<String, Object> cancelAppointmentAdmin(@RequestParam long id) {
+        String currentStatus = db.query("SELECT status FROM appointments WHERE id = ?", rs -> rs.next() ? rs.getString(1) : null, id);
+        if (currentStatus == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found");
+        }
+        int rows = db.update("UPDATE appointments SET status = 'CANCELLED', updated_at = CURRENT_TIMESTAMP WHERE id = ?", id);
+        Long staff = workflow.currentStaffId();
+        db.update("INSERT INTO appointment_status_history (appointment_id, previous_status, new_status, reason, changed_by) VALUES (?, ?, 'CANCELLED', 'Cancelled via administrative management console', ?)",
+                id, currentStatus, staff);
+        return Map.of("success", true, "message", "Appointment cancelled successfully", "id", id);
+    }
+
+    @GetMapping("/automation/status")
+    public Map<String, Object> getAutomationStatus() {
+        return automationService.getStatus();
+    }
+
+    @PostMapping("/automation/run-now")
+    public Map<String, Object> triggerAutomationCycle() {
+        return automationService.runAutomationCycle();
     }
 
     @GetMapping("/bills")
@@ -445,9 +471,9 @@ public class WebPortalController {
 
         Map<String, Object> profile = new HashMap<>(patient);
         profile.put("bloodGroup", "O+ (Positive)");
-        profile.put("allergies", "Penicillin (Mild rash) · Reported 2024");
+        profile.put("allergies", "Penicillin (Mild rash) Â· Reported 2024");
         profile.put("emergencyContact", "+91 98450 11223");
-        profile.put("primaryClinic", "ApexCare Memorial Hospital · Central OPD");
+        profile.put("primaryClinic", "ApexCare Memorial Hospital Â· Central OPD");
 
         List<Map<String, Object>> appointments = db.queryForList("""
             SELECT a.id AS appointment_id,
@@ -661,3 +687,4 @@ public class WebPortalController {
         return key.longValue();
     }
 }
+

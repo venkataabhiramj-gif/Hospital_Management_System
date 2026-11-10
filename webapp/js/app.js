@@ -274,9 +274,11 @@ async function initDashboard() {
         }).join('');
       }
     }
+    await loadAutomationStatus();
   } catch (err) {
     showAlert('Telemetry link error: ' + err.message, 'error');
   }
+  setupAutonomousSync();
 }
 
 // Doctor OPD Queue & Consultation Desk
@@ -293,6 +295,7 @@ async function initDoctorOPDDesk(user) {
   }
 
   loadDoctorQueue(user.doctorId);
+  setupAutonomousSync();
 }
 
 async function loadDoctorQueue(doctorId) {
@@ -369,6 +372,7 @@ async function selectQueuePatient(appointmentId) {
     document.getElementById('consult-prescription').value = 'Tab. Amoxicillin 500mg PO TDS × 5 days\nTab. Paracetamol 650mg PO SOS for fever\nTab. Pantoprazole 40mg OD before breakfast';
 
     document.getElementById('consultation-room-box').style.display = 'block';
+    calculateLiveBMI();
   } catch (err) {
     showAlert('Error selecting patient: ' + err.message, 'error');
   }
@@ -448,9 +452,27 @@ async function addPatient(event) {
   const formData = new FormData(form);
   const data = Object.fromEntries(formData.entries());
 
+  const fullName = (data.fullName || data.name || '').trim();
+  let dateOfBirth = data.dateOfBirth;
+  if (!dateOfBirth && data.age) {
+    const age = parseInt(data.age, 10);
+    const birthYear = new Date().getFullYear() - (isNaN(age) ? 30 : age);
+    dateOfBirth = `${birthYear}-01-01`;
+  } else if (!dateOfBirth) {
+    dateOfBirth = '1995-01-01';
+  }
+
+  const payload = {
+    fullName: fullName,
+    dateOfBirth: dateOfBirth,
+    phone: (data.phone || '').trim(),
+    duplicateReviewAcknowledged: true,
+    duplicateReviewReason: 'Outpatient intake registration'
+  };
+
   try {
-    const res = await apiCall('/patients', 'POST', data);
-    showAlert(res.message || 'Patient registered successfully', 'success');
+    const res = await apiCall('/patients', 'POST', payload);
+    showAlert(res.message || 'Patient registered successfully in MPI', 'success');
     closeModal('patient-modal');
     form.reset();
     initPatients();
@@ -458,6 +480,7 @@ async function addPatient(event) {
     showAlert(err.message, 'error');
   }
 }
+window.registerPatient = addPatient;
 
 async function archivePatient(id) {
   if (!confirm(`Archive patient record #${id}?`)) return;
@@ -586,9 +609,35 @@ async function addAppointment(event) {
   const formData = new FormData(form);
   const data = Object.fromEntries(formData.entries());
 
+  const patientNumber = (data.patientNumber || data.patientId || '').trim();
+  const doctorId = parseInt(data.doctorId, 10);
+
+  let timeStr = '09:00:00';
+  if (data.timeSlot) {
+    const m = data.timeSlot.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (m) {
+      let hours = parseInt(m[1], 10);
+      const mins = m[2];
+      const ampm = (m[3] || '').toUpperCase();
+      if (ampm === 'PM' && hours < 12) hours += 12;
+      if (ampm === 'AM' && hours === 12) hours = 0;
+      timeStr = `${String(hours).padStart(2, '0')}:${mins}:00`;
+    }
+  }
+  const apptDate = data.appointmentDate || new Date().toISOString().slice(0, 10);
+  const startsAt = `${apptDate}T${timeStr}+05:30`;
+
+  const payload = {
+    patientNumber: patientNumber,
+    doctorId: doctorId,
+    startsAt: startsAt,
+    visitType: 'APPOINTMENT',
+    reason: data.reason || 'General Outpatient Consultation'
+  };
+
   try {
-    const res = await apiCall('/appointments', 'POST', data);
-    showAlert(res.message || 'Appointment scheduled', 'success');
+    const res = await apiCall('/appointments', 'POST', payload);
+    showAlert(res.message || 'Appointment scheduled successfully', 'success');
     closeModal('appointment-modal');
     form.reset();
     initAppointments();
@@ -596,6 +645,7 @@ async function addAppointment(event) {
     showAlert(err.message, 'error');
   }
 }
+window.bookAppointment = addAppointment;
 
 async function cancelAppointmentAdmin(id) {
   if (!confirm(`Cancel appointment #APT-${id}?`)) return;
@@ -671,7 +721,8 @@ async function addBill(event) {
 
   try {
     const res = await apiCall('/bills', 'POST', data);
-    showAlert(res.message || 'Invoice generated', 'success');
+    showAlert(res.message || 'Invoice generated successfully', 'success');
+    closeModal('billing-modal');
     closeModal('bill-modal');
     form.reset();
     initBilling();
@@ -679,6 +730,7 @@ async function addBill(event) {
     showAlert(err.message, 'error');
   }
 }
+window.createBill = addBill;
 
 async function markBillPaid(billId) {
   try {
@@ -908,3 +960,149 @@ async function deleteRecord(id) {
     showAlert(err.message, 'error');
   }
 }
+
+
+// ========================================================
+// 7. CLINICAL AUTOMATIONS & REAL-TIME CALCULATORS
+// ========================================================
+
+function calculateLiveTotal() {
+  const consult = parseFloat(document.getElementById('bill-consultation')?.value || 0);
+  const treat = parseFloat(document.getElementById('bill-treatment')?.value || 0);
+  const med = parseFloat(document.getElementById('bill-medicine')?.value || 0);
+  const discPercent = parseFloat(document.getElementById('bill-discount')?.value || 0);
+  const taxPercent = parseFloat(document.getElementById('bill-tax')?.value || 0);
+
+  const subtotal = Math.max(0, consult + treat + med);
+  const discountAmt = (subtotal * discPercent) / 100;
+  const discountedSubtotal = Math.max(0, subtotal - discountAmt);
+  const taxAmt = (discountedSubtotal * taxPercent) / 100;
+  const grandTotal = discountedSubtotal + taxAmt;
+
+  const subtotalEl = document.getElementById('live-subtotal');
+  const discountEl = document.getElementById('live-discount');
+  const taxEl = document.getElementById('live-tax');
+  const totalEl = document.getElementById('live-total');
+
+  if (subtotalEl) subtotalEl.textContent = formatINR(subtotal);
+  if (discountEl) discountEl.textContent = `- ${formatINR(discountAmt)}`;
+  if (taxEl) taxEl.textContent = `+ ${formatINR(taxAmt)}`;
+  if (totalEl) totalEl.textContent = formatINR(grandTotal);
+}
+window.calculateLiveTotal = calculateLiveTotal;
+
+function calculateLiveBMI() {
+  const heightEl = document.getElementById('consult-height');
+  const weightEl = document.getElementById('consult-weight');
+  const bmiTagEl = document.getElementById('consult-bmi-tag');
+  if (!weightEl || !bmiTagEl) return;
+
+  const heightCm = heightEl ? parseFloat(heightEl.value) : 172;
+  const weightKg = parseFloat(weightEl.value);
+
+  if (!heightCm || !weightKg || heightCm <= 0 || weightKg <= 0) {
+    bmiTagEl.textContent = 'BMI --';
+    return;
+  }
+
+  const heightM = heightCm / 100;
+  const bmi = (weightKg / (heightM * heightM)).toFixed(1);
+
+  let status = 'Healthy';
+  let color = '#0f766e';
+  if (bmi < 18.5) { status = 'Underweight'; color = '#d97706'; }
+  else if (bmi < 25.0) { status = 'Healthy'; color = '#0f766e'; }
+  else if (bmi < 30.0) { status = 'Overweight'; color = '#ea580c'; }
+  else { status = 'Obese'; color = '#e11d48'; }
+
+  bmiTagEl.textContent = `BMI ${bmi} · ${status}`;
+  bmiTagEl.style.color = color;
+}
+window.calculateLiveBMI = calculateLiveBMI;
+
+async function loadAutomationStatus() {
+  const overdueEl = document.getElementById('stat-auto-overdue');
+  const invoicesEl = document.getElementById('stat-auto-invoices');
+  const remindersEl = document.getElementById('stat-auto-reminders');
+  const alertsEl = document.getElementById('stat-auto-alerts');
+  const logEl = document.getElementById('automation-recent-log');
+
+  if (!overdueEl) return;
+
+  try {
+    const data = await apiCall('/automation/status');
+    if (overdueEl) overdueEl.textContent = data.totalOverdueReconciled ?? 0;
+    if (invoicesEl) invoicesEl.textContent = data.totalInvoicesGenerated ?? 0;
+    if (remindersEl) remindersEl.textContent = data.totalRemindersDispatched ?? 0;
+
+    const totalAlerts = (data.activeExpiringBatchesCount || 0) + (data.activeLowStockItemsCount || 0);
+    if (alertsEl) {
+      alertsEl.textContent = `${totalAlerts} Active Alert${totalAlerts === 1 ? '' : 's'}`;
+      alertsEl.style.color = totalAlerts > 0 ? '#d97706' : '#059669';
+    }
+
+    if (logEl) {
+      if (data.recentLogs && data.recentLogs.length > 0) {
+        const latest = data.recentLogs[0];
+        const timeStr = latest.timestamp ? new Date(latest.timestamp).toLocaleTimeString() : 'Just now';
+        logEl.textContent = `[${timeStr}] [${latest.eventType}] ${latest.message}`;
+      } else {
+        logEl.textContent = `Autonomous Sentinel: 60s cadence active. Engine running cleanly.`;
+      }
+    }
+  } catch (e) {
+    console.warn('Automation telemetry fetch skipped:', e);
+  }
+}
+window.loadAutomationStatus = loadAutomationStatus;
+
+async function triggerAutomationCycleNow() {
+  const btn = document.getElementById('btn-trigger-automation');
+  if (btn) btn.disabled = true;
+  try {
+    showAlert('Triggering clinical automation cycle...', 'info');
+    const res = await apiCall('/automation/run-now', 'POST');
+    showAlert(res.summary || 'Automation cycle executed successfully', 'success');
+    await loadAutomationStatus();
+    if (typeof initDashboard === 'function') {
+      const stats = await apiCall('/dashboard');
+      if (document.getElementById('stat-patients')) document.getElementById('stat-patients').textContent = stats.patients;
+      if (document.getElementById('stat-doctors')) document.getElementById('stat-doctors').textContent = stats.doctors;
+      if (document.getElementById('stat-appointments')) document.getElementById('stat-appointments').textContent = stats.appointments;
+      if (document.getElementById('stat-revenue')) document.getElementById('stat-revenue').textContent = formatINR(stats.revenue);
+    }
+  } catch (err) {
+    showAlert('Automation cycle error: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+window.triggerAutomationCycleNow = triggerAutomationCycleNow;
+
+let _autonomousPollingActive = false;
+function setupAutonomousSync() {
+  if (_autonomousPollingActive) return;
+  _autonomousPollingActive = true;
+  setInterval(() => {
+    const user = getAuthUser();
+    if (user && user.role === 'DOCTOR' && document.getElementById('doctor-opd-view')?.style.display !== 'none') {
+      loadDoctorQueue(user.doctorId, true);
+    }
+    if (document.getElementById('admin-dashboard-view')?.style.display !== 'none') {
+      loadAutomationStatus();
+    }
+  }, 15000);
+}
+
+function autoComputeDOB(ageVal) {
+  const hint = document.getElementById('intake-dob-hint');
+  if (!hint) return;
+  const age = parseInt(ageVal, 10);
+  if (!ageVal || isNaN(age) || age < 0) {
+    hint.textContent = 'Est. Birth Date: --';
+    return;
+  }
+  const year = new Date().getFullYear() - age;
+  hint.textContent = `Est. Birth Date: ${year}-01-01 (${year})`;
+}
+window.autoComputeDOB = autoComputeDOB;

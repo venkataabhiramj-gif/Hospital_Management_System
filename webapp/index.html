@@ -198,10 +198,15 @@
                       <input type="text" id="consult-temp" class="form-control" value="36.8">
                       <span class="vital-tag">Afebrile 36.5-37.5</span>
                     </div>
+                                        <div class="form-group">
+                      <label style="font-size: 10.5px;">Height (cm)</label>
+                      <input type="number" id="consult-height" class="form-control" value="172" min="50" max="250" oninput="calculateLiveBMI()">
+                      <span class="vital-tag">Adult Stature</span>
+                    </div>
                     <div class="form-group">
                       <label style="font-size: 10.5px;">Weight (kg)</label>
-                      <input type="text" id="consult-weight" class="form-control" value="68.0">
-                      <span class="vital-tag">BMI 22.4 · Healthy</span>
+                      <input type="number" step="0.5" id="consult-weight" class="form-control" value="68.5" min="10" max="300" oninput="calculateLiveBMI()">
+                      <span class="vital-tag" id="consult-bmi-tag">BMI 23.2 · Healthy</span>
                     </div>
                   </div>
                 </div>
@@ -290,6 +295,57 @@
             <div class="metric-value" id="stat-revenue">--</div>
             <div class="metric-trend">↑ 18.2% Collected</div>
             <span class="metric-sub" style="margin-top: 4px;">Point-of-Care Settled Invoices</span>
+          </div>
+        </section>
+
+
+
+        <!-- Autonomous Clinical Sentinel & System Automation Engine -->
+        <section class="card" style="margin-top: 24px; background: linear-gradient(135deg, #f8fafc 0%, #f0fdf4 100%); border-left: 4px solid var(--primary);">
+          <div class="card-header" style="background: transparent;">
+            <div class="card-title">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="pulse-dot" style="background:#10b981; width:8px; height:8px; border-radius:50%; display:inline-block; box-shadow:0 0 0 3px rgba(16,185,129,0.2);"></span>
+                <h3 style="margin:0; font-size:15px; font-weight:800; color:var(--brand-navy);">Clinical Sentinel Automation Engine</h3>
+              </div>
+              <p style="margin:2px 0 0; font-size:12px; color:var(--text-muted);">
+                Autonomous Background Daemon · 60s Cycle · Lapsed Visit Reconciliation, Inventory Surveillance & RCM Auto-Billing
+              </p>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span id="automation-cadence-badge" class="status-pill status-paid" style="font-size:11px;">Active · 60s Cadence</span>
+              <button class="btn btn-primary btn-sm" onclick="triggerAutomationCycleNow()" id="btn-trigger-automation" style="padding:6px 12px; font-size:12px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                Execute Cycle Now
+              </button>
+            </div>
+          </div>
+          <div class="card-body" style="padding:16px 20px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px;">
+              <div style="background:white; border:1px solid var(--border-card); border-radius:8px; padding:12px 14px;">
+                <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:var(--text-dim); display:block;">Overdue Visits Reconciled</span>
+                <div id="stat-auto-overdue" style="font-size:20px; font-weight:800; color:var(--brand-navy); margin-top:4px;">0</div>
+                <span style="font-size:11px; color:var(--text-muted);">Auto-marked NO_SHOW</span>
+              </div>
+              <div style="background:white; border:1px solid var(--border-card); border-radius:8px; padding:12px 14px;">
+                <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:var(--text-dim); display:block;">Auto-Billed Encounters</span>
+                <div id="stat-auto-invoices" style="font-size:20px; font-weight:800; color:var(--primary); margin-top:4px;">0</div>
+                <span style="font-size:11px; color:var(--text-muted);">Invoices generated for EHR</span>
+              </div>
+              <div style="background:white; border:1px solid var(--border-card); border-radius:8px; padding:12px 14px;">
+                <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:var(--text-dim); display:block;">Reminders Dispatched</span>
+                <div id="stat-auto-reminders" style="font-size:20px; font-weight:800; color:var(--brand-navy); margin-top:4px;">0</div>
+                <span style="font-size:11px; color:var(--text-muted);">24h Outpatient SMS alerts</span>
+              </div>
+              <div style="background:white; border:1px solid var(--border-card); border-radius:8px; padding:12px 14px;">
+                <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:var(--text-dim); display:block;">Stock & Expiry Surveillance</span>
+                <div id="stat-auto-alerts" style="font-size:20px; font-weight:800; color:#059669; margin-top:4px;">0 Alerts</div>
+                <span style="font-size:11px; color:var(--text-muted);">Batches &lt;60d / Low Stock</span>
+              </div>
+            </div>
+            <div id="automation-recent-log" style="margin-top:12px; font-size:11.5px; color:var(--text-muted); background:rgba(255,255,255,0.7); border:1px dashed #cbd5e1; border-radius:6px; padding:8px 12px; font-family:var(--font-mono);">
+              Autonomous Sentinel: Background daemon initialized. 60s cadence active.
+            </div>
           </div>
         </section>
 
