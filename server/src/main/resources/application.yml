@@ -21,6 +21,11 @@ logging:
 
 server:
   port: ${HMS_SERVER_PORT:8088}
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+      enabled: true
   error:
     include-message: always
     include-stacktrace: always

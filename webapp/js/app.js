@@ -1,4 +1,4 @@
-// ApexCare Memorial Hospital — ClinicDesk Outpatient System Controller
+// ApexCare Memorial Hospital  -  ClinicDesk Outpatient System Controller
 const API_BASE = '/api';
 
 // ========================================================
@@ -287,54 +287,103 @@ let activeSelectedAppointment = null;
 async function initDoctorOPDDesk(user) {
   const docGreeting = document.getElementById('doctor-welcome-title');
   if (docGreeting) {
-    docGreeting.textContent = `${user.displayName} — OPD Clinical Encounter Desk`;
+    docGreeting.textContent = `${user.displayName}  -  OPD Clinical Encounter Desk`;
   }
   const docMeta = document.getElementById('doctor-welcome-meta');
   if (docMeta) {
-    docMeta.textContent = `Specialty: ${user.specialty || 'General Medicine & Cardiology'} · Facility 01 Outpatient Room 03`;
+    docMeta.textContent = `Specialty: ${user.specialty || 'General Medicine & Cardiology'}  ·  Facility 01 Outpatient Room 03`;
   }
 
   loadDoctorQueue(user.doctorId);
   setupAutonomousSync();
 }
 
-async function loadDoctorQueue(doctorId) {
+let currentQueueFilter = 'ALL';
+
+function filterDoctorQueue(filterType) {
+  currentQueueFilter = filterType;
+  document.querySelectorAll('.queue-filter-row .filter-pill').forEach(pill => {
+    pill.classList.remove('active');
+  });
+  const clickedPill = document.querySelector(`.queue-filter-row .filter-pill[data-filter="${filterType}"]`);
+  if (clickedPill) clickedPill.classList.add('active');
+
+  renderDoctorQueueCards();
+}
+window.filterDoctorQueue = filterDoctorQueue;
+
+function renderDoctorQueueCards() {
+  const queueContainer = document.getElementById('doctor-queue-container');
+  if (!queueContainer) return;
+  const queue = window._cachedDoctorQueue || [];
+
+  let filtered = queue;
+  if (currentQueueFilter === 'WAITING') {
+    filtered = queue.filter(q => q.status === 'BOOKED' || q.status === 'CHECKED_IN');
+  } else if (currentQueueFilter === 'IN_PROGRESS') {
+    filtered = queue.filter(q => q.status === 'IN_PROGRESS');
+  } else if (currentQueueFilter === 'DONE') {
+    filtered = queue.filter(q => q.status === 'COMPLETED');
+  }
+
+  if (filtered.length === 0) {
+    queueContainer.innerHTML = '<div style="padding:24px; text-align:center; color:var(--text-dim);">No patients in this queue category.</div>';
+    return;
+  }
+
+  queueContainer.innerHTML = filtered.map((item, idx) => {
+    const isSelected = activeSelectedAppointment && activeSelectedAppointment.appointment_id === item.appointment_id;
+    const statusClass = item.status === 'COMPLETED' ? 'status-completed' : (item.status === 'CANCELLED' ? 'status-cancelled' : 'status-booked');
+    const waitTime = item.status === 'BOOKED' ? `~${10 + idx * 15}m wait` : 'Ready';
+    const triageText = idx % 2 === 0 ? 'Standard OPD' : 'Follow-up';
+
+    return `
+      <div class="queue-patient-card ${isSelected ? 'selected' : ''}" onclick="selectQueuePatient(${item.appointment_id})">
+        <div class="queue-card-top">
+          <span class="mrn-badge">${item.patient_number}</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="triage-indicator"><span class="triage-dot ${idx === 0 ? 'urgent' : ''}"></span> ${waitTime}</span>
+            <span class="status-pill ${statusClass}">${item.status}</span>
+          </div>
+        </div>
+        <div class="queue-patient-name">${item.patient_name}</div>
+        <div style="font-size: 11.5px; color: var(--text-muted); display:flex; justify-content:space-between;">
+          <span>${item.age} Yrs â€¢ ${item.phone || '+91 00000 00001'}</span>
+          <span style="font-weight:600; color:var(--text-dim);">${triageText}</span>
+        </div>
+        <div style="font-size: 11.5px; color: var(--primary); font-weight: 600; margin-top: 2px;">
+          Reason: ${item.reason || 'General Outpatient Consultation'}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadDoctorQueue(doctorId, silent = false) {
   const queueContainer = document.getElementById('doctor-queue-container');
   if (!queueContainer) return;
 
   try {
     const queue = await apiCall(`/doctor/queue${doctorId ? '?doctorId=' + doctorId : ''}`);
-    if (queue.length === 0) {
-      queueContainer.innerHTML = '<div style="padding:24px; text-align:center; color:var(--text-dim);">No waiting patients in today’s OPD queue.</div>';
-      return;
+    window._cachedDoctorQueue = queue;
+
+    // Update filter counts
+    const allCount = queue.length;
+    const waitingCount = queue.filter(q => q.status === 'BOOKED' || q.status === 'CHECKED_IN').length;
+    const inProgCount = queue.filter(q => q.status === 'IN_PROGRESS').length;
+    const doneCount = queue.filter(q => q.status === 'COMPLETED').length;
+
+    const filterRow = document.querySelector('.queue-filter-row');
+    if (filterRow) {
+      filterRow.innerHTML = `
+        <span class="filter-pill ${currentQueueFilter === 'ALL' ? 'active' : ''}" data-filter="ALL" onclick="filterDoctorQueue('ALL')">All (${allCount})</span>
+        <span class="filter-pill ${currentQueueFilter === 'WAITING' ? 'active' : ''}" data-filter="WAITING" onclick="filterDoctorQueue('WAITING')">Waiting (${waitingCount})</span>
+        <span class="filter-pill ${currentQueueFilter === 'IN_PROGRESS' ? 'active' : ''}" data-filter="IN_PROGRESS" onclick="filterDoctorQueue('IN_PROGRESS')">In Progress (${inProgCount})</span>
+        <span class="filter-pill ${currentQueueFilter === 'DONE' ? 'active' : ''}" data-filter="DONE" onclick="filterDoctorQueue('DONE')">Done (${doneCount})</span>
+      `;
     }
 
-    queueContainer.innerHTML = queue.map((item, idx) => {
-      const isSelected = activeSelectedAppointment && activeSelectedAppointment.appointment_id === item.appointment_id;
-      const statusClass = item.status === 'COMPLETED' ? 'status-completed' : (item.status === 'CANCELLED' ? 'status-cancelled' : 'status-booked');
-      const waitTime = item.status === 'BOOKED' ? `~${10 + idx * 15}m wait` : 'Ready';
-      const triageText = idx % 2 === 0 ? 'Standard OPD' : 'Follow-up';
-
-      return `
-        <div class="queue-patient-card ${isSelected ? 'selected' : ''}" onclick="selectQueuePatient(${item.appointment_id})">
-          <div class="queue-card-top">
-            <span class="mrn-badge">${item.patient_number}</span>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <span class="triage-indicator"><span class="triage-dot ${idx === 0 ? 'urgent' : ''}"></span> ${waitTime}</span>
-              <span class="status-pill ${statusClass}">${item.status}</span>
-            </div>
-          </div>
-          <div class="queue-patient-name">${item.patient_name}</div>
-          <div style="font-size: 11.5px; color: var(--text-muted); display:flex; justify-content:space-between;">
-            <span>${item.age} Yrs • ${item.phone || '+91 00000 00001'}</span>
-            <span style="font-weight:600; color:var(--text-dim);">${triageText}</span>
-          </div>
-          <div style="font-size: 11.5px; color: var(--primary); font-weight: 600; margin-top: 2px;">
-            Reason: ${item.reason || 'General Outpatient Consultation'}
-          </div>
-        </div>
-      `;
-    }).join('');
+    renderDoctorQueueCards();
 
     // Auto-select first appointment if none selected
     if (!activeSelectedAppointment && queue.length > 0) {
@@ -359,7 +408,7 @@ async function selectQueuePatient(appointmentId) {
     // Populate consultation workspace
     document.getElementById('consult-patient-name').textContent = selected.patient_name;
     document.getElementById('consult-patient-mrn').textContent = selected.patient_number;
-    document.getElementById('consult-patient-meta').textContent = `${selected.age} Yrs · ${selected.phone || '+91 00000 00001'}`;
+    document.getElementById('consult-patient-meta').textContent = `${selected.age} Yrs  ·  ${selected.phone || '+91 00000 00001'}`;
     document.getElementById('consult-appointment-id').value = selected.appointment_id;
 
     document.getElementById('consult-complaint').value = selected.reason || 'Routine medical checkup and symptom assessment';
@@ -369,7 +418,7 @@ async function selectQueuePatient(appointmentId) {
     document.getElementById('consult-weight').value = '68.5';
     document.getElementById('consult-notes').value = 'Patient presented with standard symptoms. Physical examination normal. Vitals stable. Advised follow-up in 2 weeks.';
     document.getElementById('consult-diagnosis').value = 'General Outpatient Evaluation / Essential Hypertension (ICD-10 I10)';
-    document.getElementById('consult-prescription').value = 'Tab. Amoxicillin 500mg PO TDS × 5 days\nTab. Paracetamol 650mg PO SOS for fever\nTab. Pantoprazole 40mg OD before breakfast';
+    document.getElementById('consult-prescription').value = 'Tab. Amoxicillin 500mg PO TDS x 5 days\nTab. Paracetamol 650mg PO SOS for fever\nTab. Pantoprazole 40mg OD before breakfast';
 
     document.getElementById('consultation-room-box').style.display = 'block';
     calculateLiveBMI();
@@ -409,38 +458,65 @@ async function handleFinalizeConsultation(e) {
 // ========================================================
 // 2. PATIENTS MODULE
 // ========================================================
+function renderPatientsTable(list) {
+  const tbody = document.getElementById('patients-tbody');
+  if (!tbody) return;
+  if (!list || list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 32px; color: var(--text-dim);">No active patient records found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td><span class="mrn-badge">${p.id}</span></td>
+      <td>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="user-avatar" style="width:28px; height:28px; font-size:11px;">${getInitials(p.name)}</div>
+          <div>
+            <strong style="color:var(--brand-navy);">${p.name}</strong>
+            <div style="font-size:11px; color:var(--text-dim);">${p.age || '32'} Yrs Â ·  ${p.gender || 'Unspecified'}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="vital-tag" style="font-size:11.5px; font-weight:700;">${p.bloodGroup || 'O+'}</span></td>
+      <td><span style="font-family: var(--font-mono);">${p.phone || p.contact || '+91 98450 00000'}</span></td>
+      <td style="color:var(--text-muted); font-size:12px;">${p.email || (p.name ? p.name.toLowerCase().replace(/\s+/g, '.') + '@apexcare.org' : 'patient@apexcare.org')}</td>
+      <td style="color:var(--text-muted); font-size:12px; max-width:180px;">${p.address || 'Central Outpatient District'}</td>
+      <td style="font-size:12px; color:var(--text-dim);">${p.registeredDate || '2026-11-10'}</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="archivePatient('${p.id}')">
+          Archive
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
 async function initPatients() {
   syncHospitalInterface();
-  const tbody = document.getElementById('patients-tbody');
   try {
     const patients = await apiCall('/patients');
-    if (patients.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 32px; color: var(--text-dim);">No active patient records found.</td></tr>';
-      return;
-    }
+    window._cachedPatients = patients;
 
-    tbody.innerHTML = patients.map(p => `
-      <tr>
-        <td><span class="mrn-badge">${p.id}</span></td>
-        <td>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <div class="user-avatar" style="width:28px; height:28px; font-size:11px;">${getInitials(p.name)}</div>
-            <div>
-              <strong style="color:var(--brand-navy);">${p.name}</strong>
-            </div>
-          </div>
-        </td>
-        <td>${p.age || '32'}</td>
-        <td>${p.gender || 'Unknown'}</td>
-        <td><span style="font-family: var(--font-mono);">${p.contact}</span></td>
-        <td><span class="status-pill status-active">Active</span></td>
-        <td>
-          <button class="btn btn-danger btn-sm" onclick="archivePatient('${p.id}')">
-            Archive
-          </button>
-        </td>
-      </tr>
-    `).join('');
+    const countBadge = document.getElementById('patient-count-badge');
+    if (countBadge) countBadge.textContent = `${patients.length} Active Records`;
+
+    renderPatientsTable(patients);
+
+    const searchInput = document.getElementById('patient-search');
+    if (searchInput && !searchInput._hasListener) {
+      searchInput._hasListener = true;
+      searchInput.addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase().trim();
+        const filtered = (window._cachedPatients || []).filter(p =>
+          (p.id && p.id.toLowerCase().includes(q)) ||
+          (p.name && p.name.toLowerCase().includes(q)) ||
+          (p.phone && p.phone.toLowerCase().includes(q)) ||
+          (p.contact && p.contact.toLowerCase().includes(q)) ||
+          (p.bloodGroup && p.bloodGroup.toLowerCase().includes(q))
+        );
+        renderPatientsTable(filtered);
+      });
+    }
   } catch (err) {
     showAlert(err.message, 'error');
   }
@@ -496,33 +572,58 @@ async function archivePatient(id) {
 // ========================================================
 // 3. DOCTORS MODULE
 // ========================================================
+function renderDoctorsTable(list) {
+  const tbody = document.getElementById('doctors-tbody');
+  if (!tbody) return;
+  if (!list || list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 32px; color: var(--text-dim);">No registered medical specialists.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(d => `
+    <tr>
+      <td><span class="mrn-badge">#DOC-${d.id}</span></td>
+      <td>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="user-avatar" style="width:28px; height:28px; font-size:11px;">${getInitials(d.name)}</div>
+          <div>
+            <strong style="color:var(--brand-navy);">${d.name}</strong>
+            <div style="font-size:11px; color:var(--text-dim);">${d.qualification || 'MBBS, MD'}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="mrn-badge">${d.specialization}</span></td>
+      <td><span style="font-family: var(--font-mono);">${d.contact || d.phone || '+91 80 4000 1200'}</span></td>
+      <td style="font-weight:700; color:var(--brand-navy);">${formatINR(d.consultationFee || 1000)}</td>
+      <td><span class="status-pill status-active">Mon-Sat (09:00 - 17:00)</span></td>
+      <td>
+        <a href="/appointments.html" class="btn btn-secondary btn-sm">Schedule Visit</a>
+      </td>
+    </tr>
+  `).join('');
+}
+
 async function initDoctors() {
   syncHospitalInterface();
-  const tbody = document.getElementById('doctors-tbody');
   try {
     const doctors = await apiCall('/doctors');
-    if (doctors.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 32px; color: var(--text-dim);">No registered medical specialists.</td></tr>';
-      return;
-    }
+    window._cachedDoctors = doctors;
 
-    tbody.innerHTML = doctors.map(d => `
-      <tr>
-        <td><span class="mrn-badge">#DOC-${d.id}</span></td>
-        <td>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <div class="user-avatar" style="width:28px; height:28px; font-size:11px;">${getInitials(d.name)}</div>
-            <strong style="color:var(--brand-navy);">${d.name}</strong>
-          </div>
-        </td>
-        <td><span class="mrn-badge">${d.specialization}</span></td>
-        <td>${d.contact || '+91 80 4000 1200'}</td>
-        <td><span class="status-pill status-completed">OPD Active (09:00 - 17:00)</span></td>
-        <td>
-          <a href="/appointments.html" class="btn btn-secondary btn-sm">Schedule Visit</a>
-        </td>
-      </tr>
-    `).join('');
+    const countBadge = document.getElementById('doctor-count-badge');
+    if (countBadge) countBadge.textContent = `${doctors.length} Clinicians Enrolled`;
+
+    renderDoctorsTable(doctors);
+
+    const specFilter = document.getElementById('doctor-spec-filter');
+    if (specFilter && !specFilter._hasListener) {
+      specFilter._hasListener = true;
+      specFilter.addEventListener('change', (e) => {
+        const spec = e.target.value.toLowerCase().trim();
+        const filtered = spec
+          ? (window._cachedDoctors || []).filter(d => (d.specialization || '').toLowerCase().includes(spec))
+          : (window._cachedDoctors || []);
+        renderDoctorsTable(filtered);
+      });
+    }
   } catch (err) {
     showAlert(err.message, 'error');
   }
@@ -548,10 +649,42 @@ async function addDoctor(event) {
 // ========================================================
 // 4. APPOINTMENTS MODULE
 // ========================================================
+function renderAppointmentsTable(list) {
+  const tbody = document.getElementById('appointments-tbody');
+  if (!tbody) return;
+  if (!list || list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 32px; color: var(--text-dim);">No scheduled appointments found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(a => {
+    const statusClass = a.status === 'COMPLETED' ? 'status-completed' : (a.status === 'CANCELLED' ? 'status-cancelled' : 'status-booked');
+    const dateStr = a.date || (a.startsAt ? new Date(a.startsAt).toLocaleDateString('en-IN') : 'Scheduled');
+    const timeStr = a.time || (a.startsAt ? new Date(a.startsAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '10:00 AM');
+
+    return `
+      <tr>
+        <td><span class="mrn-badge">#APT-${a.id}</span></td>
+        <td>
+          <strong style="color:var(--brand-navy);">${a.patientName}</strong>
+          <div style="font-size:11px; color:var(--text-dim);">${a.patientId || ''}</div>
+        </td>
+        <td><strong>${a.doctorName}</strong></td>
+        <td>${dateStr}</td>
+        <td style="font-family: var(--font-mono);">${timeStr}</td>
+        <td><span class="status-pill ${statusClass}">${a.status}</span></td>
+        <td style="font-size:12px; color:var(--text-muted); max-width:180px;">${a.reason || 'General Outpatient Consultation'}</td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="cancelAppointmentAdmin(${a.id})">
+            Cancel
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
 async function initAppointments() {
   syncHospitalInterface();
-  const tbody = document.getElementById('appointments-tbody');
-
   try {
     const patients = await apiCall('/patients');
     const doctors = await apiCall('/doctors');
@@ -569,35 +702,8 @@ async function initAppointments() {
     }
 
     const appointments = await apiCall('/appointments');
-    if (appointments.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 32px; color: var(--text-dim);">No scheduled appointments found.</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = appointments.map(a => {
-      const statusClass = a.status === 'COMPLETED' ? 'status-completed' : (a.status === 'CANCELLED' ? 'status-cancelled' : 'status-booked');
-      const dateStr = a.date || (a.startsAt ? new Date(a.startsAt).toLocaleDateString('en-IN') : 'Scheduled');
-      const timeStr = a.time || (a.startsAt ? new Date(a.startsAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '10:00 AM');
-
-      return `
-        <tr>
-          <td><span class="mrn-badge">#APT-${a.id}</span></td>
-          <td>
-            <strong style="color:var(--brand-navy);">${a.patientName}</strong>
-            <div style="font-size:11px; color:var(--text-dim);">${a.patientId || ''}</div>
-          </td>
-          <td><strong>${a.doctorName}</strong></td>
-          <td>${dateStr}</td>
-          <td style="font-family: var(--font-mono);">${timeStr}</td>
-          <td><span class="status-pill ${statusClass}">${a.status}</span></td>
-          <td>
-            <button class="btn btn-outline btn-sm" onclick="cancelAppointmentAdmin(${a.id})">
-              Cancel
-            </button>
-          </td>
-        </tr>
-      `;
-    }).join('');
+    window._cachedAppointments = appointments;
+    renderAppointmentsTable(appointments);
   } catch (err) {
     showAlert(err.message, 'error');
   }
@@ -661,10 +767,49 @@ async function cancelAppointmentAdmin(id) {
 // ========================================================
 // 5. BILLING & RCM MODULE
 // ========================================================
+function renderBillingTable(list) {
+  const tbody = document.getElementById('billing-tbody');
+  if (!tbody) return;
+  if (!list || list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding: 32px; color: var(--text-dim);">No billing invoices issued.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(b => {
+    const isPaid = b.paymentStatus === 'PAID';
+    return `
+      <tr>
+        <td><span class="mrn-badge">${b.invoiceNumber || '#INV-' + b.billId}</span></td>
+        <td>
+          <strong style="color:var(--brand-navy);">${b.patientName}</strong>
+          <div style="font-size:11px; color:var(--text-dim);">${b.patientId}</div>
+        </td>
+        <td>${formatINR(b.consultationFee || 500)}</td>
+        <td>${formatINR(b.treatmentCharges || 0)}</td>
+        <td>${formatINR(b.medicineCharges || 0)}</td>
+        <td>${b.discountPercent || 0}%</td>
+        <td>${b.taxPercent || 5}%</td>
+        <td style="font-weight:700; color:var(--brand-navy);">${formatINR(b.totalAmount)}</td>
+        <td>${b.billingDate}</td>
+        <td><span class="status-pill ${isPaid ? 'status-paid' : 'status-pending'}">${b.paymentStatus}</span></td>
+        <td>
+          <div style="display:flex; gap:6px;">
+            ${!isPaid ? `
+              <button class="btn btn-primary btn-sm" onclick="markBillPaid(${b.billId})">
+                Collect
+              </button>
+            ` : ''}
+            <button class="btn btn-secondary btn-sm" onclick="showReceipt(${b.billId})">
+              Tax Invoice
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
 async function initBilling() {
   syncHospitalInterface();
-  const tbody = document.getElementById('billing-tbody');
-
   try {
     const patients = await apiCall('/patients');
     const patientSelect = document.getElementById('bill-patient-select');
@@ -675,39 +820,7 @@ async function initBilling() {
 
     const bills = await apiCall('/bills');
     window._cachedBills = bills;
-
-    if (bills.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 32px; color: var(--text-dim);">No billing invoices issued.</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = bills.map(b => {
-      const isPaid = b.paymentStatus === 'PAID';
-      return `
-        <tr>
-          <td><span class="mrn-badge">${b.invoiceNumber || '#INV-' + b.billId}</span></td>
-          <td>
-            <strong style="color:var(--brand-navy);">${b.patientName}</strong>
-            <div style="font-size:11px; color:var(--text-dim);">${b.patientId}</div>
-          </td>
-          <td>${b.billingDate}</td>
-          <td style="font-weight:700; color:var(--brand-navy);">${formatINR(b.totalAmount)}</td>
-          <td><span class="status-pill ${isPaid ? 'status-paid' : 'status-pending'}">${b.paymentStatus}</span></td>
-          <td>
-            <div style="display:flex; gap:6px;">
-              ${!isPaid ? `
-                <button class="btn btn-primary btn-sm" onclick="markBillPaid(${b.billId})">
-                  Collect
-                </button>
-              ` : ''}
-              <button class="btn btn-secondary btn-sm" onclick="showReceipt(${b.billId})">
-                Tax Invoice
-              </button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
+    renderBillingTable(bills);
   } catch (err) {
     showAlert(err.message, 'error');
   }
@@ -754,8 +867,8 @@ function showReceipt(billId) {
       <div class="receipt-header-row">
         <div class="receipt-hospital-info">
           <h3>ApexCare Memorial Hospital</h3>
-          <p>Facility 01 · Central Outpatient & Diagnostics Center</p>
-          <p>GSTIN: 37AAAAA0000A1Z5 · License: AP-MED-2024-8891</p>
+          <p>Facility 01  ·  Central Outpatient & Diagnostics Center</p>
+          <p>GSTIN: 37AAAAA0000A1Z5  ·  License: AP-MED-2024-8891</p>
         </div>
         <div class="receipt-meta-box">
           <div style="font-weight:700; color:var(--brand-navy);">TAX INVOICE & RECEIPT</div>
@@ -808,7 +921,7 @@ function showReceipt(billId) {
       <div class="receipt-stamp-box">
         <div>
           <p>Electronically generated through ClinicDesk Unified System.</p>
-          <p>Database: data/hospital.mv.db · No physical signature required.</p>
+          <p>Database: data/hospital.mv.db  ·  No physical signature required.</p>
         </div>
         <div class="official-seal">✓ OFFICIAL RECEIPT PAID</div>
       </div>
@@ -899,7 +1012,7 @@ function viewRecordDetail(recordId) {
       <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-subtle); padding-bottom:12px;">
         <div>
           <h3 style="font-size:16px; font-weight:700; color:var(--brand-navy);">${r.patientName}</h3>
-          <p style="font-size:12px; color:var(--text-muted);">MRN: <strong>${r.patientId}</strong> · Date: <strong>${r.recordDate}</strong></p>
+          <p style="font-size:12px; color:var(--text-muted);">MRN: <strong>${r.patientId}</strong>  ·  Date: <strong>${r.recordDate}</strong></p>
         </div>
         <div style="text-align:right;">
           <div style="font-weight:700; color:var(--primary);">${r.doctorName}</div>
@@ -1015,7 +1128,7 @@ function calculateLiveBMI() {
   else if (bmi < 30.0) { status = 'Overweight'; color = '#ea580c'; }
   else { status = 'Obese'; color = '#e11d48'; }
 
-  bmiTagEl.textContent = `BMI ${bmi} · ${status}`;
+  bmiTagEl.textContent = `BMI ${bmi}  ·  ${status}`;
   bmiTagEl.style.color = color;
 }
 window.calculateLiveBMI = calculateLiveBMI;

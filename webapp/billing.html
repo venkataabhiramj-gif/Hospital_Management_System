@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Revenue Cycle & Invoicing — ApexCare Memorial Hospital & ClinicDesk</title>
+  <title>Revenue Cycle & Invoicing &mdash; ApexCare Memorial Hospital & ClinicDesk</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -145,17 +145,17 @@
             </div>
 
             <div class="form-group">
-              <label>Doctor Consultation Charge (₹)</label>
+              <label>Doctor Consultation Charge (&#8377;)</label>
               <input type="number" id="bill-consultation" name="consultationFee" min="0" step="50" class="form-control" value="1000" oninput="calculateLiveTotal()">
             </div>
 
             <div class="form-group">
-              <label>Clinical Treatment & Lab Charges (₹)</label>
+              <label>Clinical Treatment & Lab Charges (&#8377;)</label>
               <input type="number" id="bill-treatment" name="treatmentCharges" min="0" step="50" class="form-control" value="0" oninput="calculateLiveTotal()">
             </div>
 
             <div class="form-group">
-              <label>Pharmacy / Dispensary Charges (₹)</label>
+              <label>Pharmacy / Dispensary Charges (&#8377;)</label>
               <input type="number" id="bill-medicine" name="medicineCharges" min="0" step="10" class="form-control" value="0" oninput="calculateLiveTotal()">
             </div>
 
@@ -182,19 +182,19 @@
           <div style="margin-top: 18px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px;">
             <div style="display:flex; justify-content:space-between; font-size:12px; color:#64748b; margin-bottom:4px;">
               <span>Calculated Gross Subtotal:</span>
-              <strong id="live-subtotal" style="color:#0f172a;">₹1,000.00</strong>
+              <strong id="live-subtotal" style="color:#0f172a;">&#8377;1,000.00</strong>
             </div>
             <div style="display:flex; justify-content:space-between; font-size:12px; color:#059669; margin-bottom:4px;">
               <span>Applied Discount:</span>
-              <span id="live-discount">- ₹0.00</span>
+              <span id="live-discount">- &#8377;0.00</span>
             </div>
             <div style="display:flex; justify-content:space-between; font-size:12px; color:#64748b; margin-bottom:8px;">
               <span>Applicable GST (5%):</span>
-              <span id="live-tax">+ ₹50.00</span>
+              <span id="live-tax">+ &#8377;50.00</span>
             </div>
             <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:800; color:#0f172a; border-top:1px solid #e2e8f0; padding-top:8px;">
               <span>Net Invoice Total:</span>
-              <span id="live-total" style="color: #0284c7;">₹1,050.00</span>
+              <span id="live-total" style="color: #0284c7;">&#8377;1,050.00</span>
             </div>
           </div>
         </div>

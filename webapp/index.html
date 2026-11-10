@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ApexCare Memorial Hospital — ClinicDesk Healthcare System</title>
+  <title>ApexCare Memorial Hospital &mdash; ClinicDesk Healthcare System</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -82,7 +82,7 @@
       <div class="top-bar-right">
         <div class="shift-indicator">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          <span>OPD Shift 09:00 – 17:00 IST</span>
+          <span>OPD Shift 09:00 &ndash; 17:00 IST</span>
         </div>
         <a href="/appointments.html" class="btn btn-primary">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -105,7 +105,7 @@
             You are logged in as an outpatient. Access your scheduled visits, doctor prescriptions, clinical notes, and official tax receipts in the dedicated patient services view.
           </p>
           <a href="/patient-portal.html" class="btn btn-primary" style="padding: 12px 24px; font-size: 14px;">
-            Open Patient Health Portal →
+            Open Patient Health Portal &rarr;
           </a>
         </div>
       </div>
@@ -118,10 +118,10 @@
           <div class="card-body" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
               <h2 id="doctor-welcome-title" style="font-size: 18px; color: var(--brand-navy); font-weight: 800;">
-                Dr. Kavya Menon — OPD Clinical Encounter Desk
+                Dr. Kavya Menon &mdash; OPD Clinical Encounter Desk
               </h2>
               <p id="doctor-welcome-meta" style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">
-                Specialty: General Medicine & Cardiology · Facility 01 Outpatient Room 03
+                Specialty: General Medicine & Cardiology &middot; Facility 01 Outpatient Room 03
               </p>
             </div>
             <div style="display: flex; gap: 10px;">
@@ -139,7 +139,7 @@
           <div class="card">
             <div class="card-header">
               <div class="card-title">
-                <h3>Today’s Waiting Queue</h3>
+                <h3>Today's Waiting Queue</h3>
                 <p>Select a patient to begin clinical evaluation</p>
               </div>
             </div>
@@ -151,7 +151,7 @@
                 <span class="filter-pill">Done (1)</span>
               </div>
               <div class="opd-queue-list" id="doctor-queue-container">
-                <div style="padding: 24px; text-align: center; color: var(--text-dim);">Loading OPD queue…</div>
+                <div style="padding: 24px; text-align: center; color: var(--text-dim);">Loading OPD queue...</div>
               </div>
             </div>
           </div>
@@ -206,7 +206,7 @@
                     <div class="form-group">
                       <label style="font-size: 10.5px;">Weight (kg)</label>
                       <input type="number" step="0.5" id="consult-weight" class="form-control" value="68.5" min="10" max="300" oninput="calculateLiveBMI()">
-                      <span class="vital-tag" id="consult-bmi-tag">BMI 23.2 · Healthy</span>
+                      <span class="vital-tag" id="consult-bmi-tag">BMI 23.2 &middot; Healthy</span>
                     </div>
                   </div>
                 </div>
@@ -257,7 +257,7 @@
               </div>
             </div>
             <div class="metric-value" id="stat-patients">--</div>
-            <div class="metric-trend">↑ 12% vs last month</div>
+            <div class="metric-trend">&uarr; 12% vs last month</div>
             <span class="metric-sub" style="margin-top: 4px;">Master Patient Index Verified</span>
           </div>
 
@@ -293,7 +293,7 @@
               </div>
             </div>
             <div class="metric-value" id="stat-revenue">--</div>
-            <div class="metric-trend">↑ 18.2% Collected</div>
+            <div class="metric-trend">&uarr; 18.2% Collected</div>
             <span class="metric-sub" style="margin-top: 4px;">Point-of-Care Settled Invoices</span>
           </div>
         </section>
@@ -309,11 +309,11 @@
                 <h3 style="margin:0; font-size:15px; font-weight:800; color:var(--brand-navy);">Clinical Sentinel Automation Engine</h3>
               </div>
               <p style="margin:2px 0 0; font-size:12px; color:var(--text-muted);">
-                Autonomous Background Daemon · 60s Cycle · Lapsed Visit Reconciliation, Inventory Surveillance & RCM Auto-Billing
+                Autonomous Background Daemon &middot; 60s Cycle &middot; Lapsed Visit Reconciliation, Inventory Surveillance & RCM Auto-Billing
               </p>
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
-              <span id="automation-cadence-badge" class="status-pill status-paid" style="font-size:11px;">Active · 60s Cadence</span>
+              <span id="automation-cadence-badge" class="status-pill status-paid" style="font-size:11px;">Active &middot; 60s Cadence</span>
               <button class="btn btn-primary btn-sm" onclick="triggerAutomationCycleNow()" id="btn-trigger-automation" style="padding:6px 12px; font-size:12px;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
                 Execute Cycle Now
@@ -372,7 +372,7 @@
                   </tr>
                 </thead>
                 <tbody id="recent-appointments-tbody">
-                  <tr><td colspan="6" style="text-align:center; padding: 24px; color: var(--text-dim);">Connecting to clinical telemetry service…</td></tr>
+                  <tr><td colspan="6" style="text-align:center; padding: 24px; color: var(--text-dim);">Connecting to clinical telemetry service...</td></tr>
                 </tbody>
               </table>
             </div>
