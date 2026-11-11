@@ -7,18 +7,16 @@ const API_BASE = '/api';
 function getAuthUser() {
   try {
     const raw = sessionStorage.getItem('apexcare_auth');
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && (parsed.success || parsed.username || parsed.profileType)) {
+        return parsed;
+      }
+    }
   } catch (e) {
     console.error('Failed to parse auth session:', e);
   }
-  // Default to demo admin so app is always functional if opened directly
-  return {
-    success: true,
-    profileType: 'ADMIN',
-    role: 'ADMIN',
-    username: 'admin',
-    displayName: 'System Administrator'
-  };
+  return null;
 }
 
 function setAuthUser(user) {
@@ -27,29 +25,41 @@ function setAuthUser(user) {
 
 function logoutUser() {
   sessionStorage.removeItem('apexcare_auth');
-  window.location.href = '/login.html';
+  window.location.replace('/login.html');
 }
 
 function requireAuth(allowedProfile) {
-  const raw = sessionStorage.getItem('apexcare_auth');
-  if (!raw) {
-    window.location.href = '/login.html';
-    return;
+  const path = (window.location.pathname || '').toLowerCase();
+  if (path.endsWith('/login.html') || path === '/login.html' || path === '/') {
+    return null;
   }
-  const user = JSON.parse(raw);
+  const user = getAuthUser();
+  if (!user) {
+    window.location.replace('/login.html');
+    return null;
+  }
   if (allowedProfile && user.profileType !== allowedProfile && user.role !== 'ADMIN') {
     if (user.profileType === 'PATIENT') {
-      window.location.href = '/patient-portal.html';
+      window.location.replace('/patient-portal.html');
     } else {
-      window.location.href = '/';
+      window.location.replace('/index.html');
     }
+    return null;
   }
+  return user;
 }
 
 // Injects active user pill and synchronizes sidebar navigation according to role
 function syncHospitalInterface() {
+  const path = (window.location.pathname || '').toLowerCase();
+  if (path.endsWith('/login.html') || path === '/login.html') {
+    return;
+  }
   const user = getAuthUser();
-  if (!user) return;
+  if (!user) {
+    window.location.replace('/login.html');
+    return;
+  }
 
   // 1. Update Topbar
   const topbarRight = document.querySelector('.top-bar-right');
@@ -214,6 +224,7 @@ function formatINR(amount) {
 async function initDashboard() {
   syncHospitalInterface();
   const user = getAuthUser();
+  if (!user) return;
 
   const adminView = document.getElementById('admin-dashboard-view');
   const doctorView = document.getElementById('doctor-opd-view');

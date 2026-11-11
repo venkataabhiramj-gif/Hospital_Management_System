@@ -26,7 +26,7 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/", "/index.html", "/*.html", "/css/**", "/js/**", "/favicon.ico", "/error").permitAll()
+                        .requestMatchers("/", "/login.html", "/index.html", "/*.html", "/css/**", "/js/**", "/downloads/**", "/api/download/**", "/favicon.ico", "/error").permitAll()
                         .requestMatchers("/api/health", "/api/dashboard").permitAll()
                         .requestMatchers("/api/auth/**", "/api/patient/**", "/api/doctor/**").permitAll()
                         .requestMatchers("/api/bills", "/api/bills/**").permitAll()
