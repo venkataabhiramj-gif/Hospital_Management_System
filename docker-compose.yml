@@ -16,3 +16,4 @@ services:
 volumes:
   hms-data:
     driver: local
+
