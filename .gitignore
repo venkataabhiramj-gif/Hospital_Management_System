@@ -41,4 +41,5 @@ lib/*.jar
 .project
 .classpath
 .settings/
+.tools/
 
