@@ -6,3 +6,4 @@ echo ========================================================
 echo Launching Desktop Clinical Application...
 call gradlew.bat :desktop:run
 pause
+

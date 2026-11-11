@@ -15,6 +15,12 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
 }
 
+processResources {
+    from("${rootProject.projectDir}/webapp") {
+        into 'static'
+    }
+}
+
 tasks.named('bootRun') {
     systemProperty 'spring.profiles.active', System.getProperty('spring.profiles.active', 'dev,demo')
     workingDir = rootProject.projectDir

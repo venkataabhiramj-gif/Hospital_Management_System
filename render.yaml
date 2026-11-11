@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: apexcare-hospital-management
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: SPRING_PROFILES_ACTIVE
+        value: dev,demo

@@ -20,7 +20,7 @@ logging:
     org.springframework.security: DEBUG
 
 server:
-  port: ${HMS_SERVER_PORT:8088}
+  port: ${PORT:${HMS_SERVER_PORT:8088}}
   servlet:
     encoding:
       charset: UTF-8
