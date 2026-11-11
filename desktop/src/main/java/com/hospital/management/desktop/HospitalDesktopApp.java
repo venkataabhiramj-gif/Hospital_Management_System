@@ -42,16 +42,56 @@ public class HospitalDesktopApp extends Application {
     }
 
     private VBox login(Stage stage) {
-        TextField host = new TextField("http://localhost:8088"); host.setPromptText("Clinic service address");
-        TextField username = new TextField(); username.setPromptText("Staff username");
-        PasswordField password = new PasswordField(); password.setPromptText("Password");
+        TextField host = new TextField("http://localhost:8088"); host.setPromptText("e.g. http://localhost:8088");
+        TextField username = new TextField(); username.setPromptText("Staff username (e.g. admin or demo.doctor)");
+        PasswordField password = new PasswordField(); password.setPromptText("Account password");
         Label title = new Label("ApexCare Memorial Hospital"); title.getStyleClass().add("login-title");
-        Label hint = new Label("ClinicDesk Outpatient Workspace \u00B7 Facility 01"); hint.getStyleClass().add("muted");
-        Button connect = new Button("Sign in"); connect.setDefaultButton(true);
-        Label message = new Label();
-        connect.setOnAction(e -> { String serviceAddress=host.getText(),user=username.getText().trim(),secret=password.getText();connect.setDisable(true);message.setText("Connecting\u2026");
-            api.login(serviceAddress,user,secret).whenComplete((response,error)->Platform.runLater(()->{connect.setDisable(false);if(error!=null)message.setText(loginFailure(error));else{try{JsonNode profile=json.readTree(response);activeUsername=profile.path("username").asText(user);activeName=profile.path("displayName").asText(user);activeRole=profile.path("role").asText("");status.setText("Signed in \u00B7 live clinic information is ready.");stage.getScene().setRoot(workspace());}catch(Exception parseError){message.setText("The service did not return a valid staff profile.");}}})); });
-        VBox box = new VBox(14,title,hint,new Label("Clinic service address"),host,new Label("Staff username"),username,new Label("Password"),password,connect,message);
+        Label hint = new Label("Clinical Workstation \u00B7 Facility 01"); hint.getStyleClass().add("muted");
+        Button connect = new Button("Sign in to Clinical Desk"); connect.setDefaultButton(true); connect.getStyleClass().add("btn-primary");
+        connect.setMaxWidth(Double.MAX_VALUE);
+        Label message = new Label(); message.getStyleClass().add("login-error");
+
+        connect.setOnAction(e -> {
+            String serviceAddress = host.getText(), user = username.getText().trim(), secret = password.getText();
+            connect.setDisable(true);
+            message.setText("Authenticating with clinic server\u2026");
+            api.login(serviceAddress, user, secret).whenComplete((response, error) -> Platform.runLater(() -> {
+                connect.setDisable(false);
+                if (error != null) {
+                    message.setText(loginFailure(error));
+                } else {
+                    try {
+                        JsonNode profile = json.readTree(response);
+                        activeUsername = profile.path("username").asText(user);
+                        activeName = profile.path("displayName").asText(user);
+                        activeRole = profile.path("role").asText("STAFF");
+                        status.setText("Connected to clinic server \u00B7 Session active.");
+                        stage.getScene().setRoot(workspace());
+                    } catch (Exception parseError) {
+                        message.setText("The server did not return a valid staff profile.");
+                    }
+                }
+            }));
+        });
+
+        // Quick 1-Click Demo Profiles Row
+        Label demoLabel = new Label("1-Click Instant Demo Credentials:"); demoLabel.getStyleClass().add("demo-label");
+        Button btnAdmin = new Button("Admin"); btnAdmin.getStyleClass().add("demo-btn-chip");
+        btnAdmin.setOnAction(e -> { username.setText("admin"); password.setText("DemoAdminPass123!"); });
+
+        Button btnDoctor = new Button("Dr. Menon"); btnDoctor.getStyleClass().add("demo-btn-chip");
+        btnDoctor.setOnAction(e -> { username.setText("demo.doctor"); password.setText("DemoStaffPass123!"); });
+
+        Button btnReception = new Button("Reception"); btnReception.getStyleClass().add("demo-btn-chip");
+        btnReception.setOnAction(e -> { username.setText("demo.reception"); password.setText("DemoStaffPass123!"); });
+
+        Button btnPharmacy = new Button("Pharmacy"); btnPharmacy.getStyleClass().add("demo-btn-chip");
+        btnPharmacy.setOnAction(e -> { username.setText("demo.pharmacy"); password.setText("DemoStaffPass123!"); });
+
+        HBox demoRow = new HBox(6, btnAdmin, btnDoctor, btnReception, btnPharmacy);
+        demoRow.setAlignment(javafx.geometry.Pos.CENTER);
+
+        VBox box = new VBox(12, title, hint, new Label("Server Address"), host, new Label("Staff Username"), username, new Label("Password"), password, connect, message, new Separator(), demoLabel, demoRow);
         box.getStyleClass().add("login-card"); box.setMaxWidth(460);
         StackPane root = new StackPane(box); root.getStyleClass().add("login-background"); return new VBox(root);
     }
@@ -98,11 +138,13 @@ public class HospitalDesktopApp extends Application {
     }
     private boolean hasRole(String... allowed) { return java.util.Arrays.asList(allowed).contains(activeRole); }
     private String loginFailure(Throwable error) {
-        Throwable cause=error;
-        while(cause.getCause()!=null) cause=cause.getCause();
-        String detail=cause.getMessage();
-        if(detail!=null&&detail.contains("Use HTTPS")) return detail;
-        return "Sign-in failed. Confirm the clinic address and ask an administrator to check your staff account and credentials.";
+        Throwable cause = error;
+        while (cause.getCause() != null) cause = cause.getCause();
+        String detail = cause.getMessage();
+        if (detail != null && !detail.isBlank() && !detail.contains("Use HTTPS")) {
+            return detail;
+        }
+        return "Sign-in failed. Please verify the server address, username, and password.";
     }
     private void changePassword() {
         PasswordField next=new PasswordField();next.setPromptText("New password (12-72 UTF-8 bytes)");PasswordField confirm=new PasswordField();confirm.setPromptText("Confirm new password");

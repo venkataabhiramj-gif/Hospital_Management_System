@@ -24,7 +24,7 @@ public class MainActivity extends Activity {
     private String activeRole="";
     private LinearLayout page;
     private TextView output;
-    private int ink=Color.rgb(24,43,58), teal=Color.rgb(20,107,120), mist=Color.rgb(244,247,251), line=Color.rgb(224,232,239);
+    private int ink=Color.rgb(11,37,69), teal=Color.rgb(13,115,119), mist=Color.rgb(246,248,250), line=Color.rgb(226,232,240);
 
     @Override public void onCreate(Bundle state) { super.onCreate(state); getWindow().setStatusBarColor(mist); getWindow().setNavigationBarColor(mist); getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR); showLogin(); }
     private void base(String title) {
@@ -42,20 +42,51 @@ public class MainActivity extends Activity {
         heading.addView(brand);heading.addView(pageTitle);LinearLayout.LayoutParams hp=(LinearLayout.LayoutParams)heading.getLayoutParams();hp.bottomMargin=dp(16);heading.setLayoutParams(hp);
     }
     private void showLogin() {
-        base("Welcome back"); EditText address=field("Service address", "http://10.0.2.2:8088"); EditText username=field("Staff username",""); EditText password=field("Password",""); password.setInputType(129);
-        Button signIn=button("Sign in"); signIn.setOnClickListener(v->{
+        base("Staff Sign In"); 
+        EditText address=field("Server address", "http://10.0.2.2:8088"); 
+        EditText username=field("Staff username",""); 
+        EditText password=field("Password",""); password.setInputType(129);
+        Button signIn=button("Sign in to Clinical Desk"); 
+        signIn.setOnClickListener(v->{
+            String raw=address.getText().toString().trim();
+            if(raw.isEmpty()) raw="http://10.0.2.2:8088";
+            if(!raw.startsWith("http://")&&!raw.startsWith("https://")){
+                if(raw.contains("trycloudflare.com")||raw.contains("onrender.com")||raw.contains(".app")||raw.contains(".com")){
+                    raw="https://"+raw;
+                }else{
+                    raw="http://"+raw;
+                }
+            }
             try {
-                URI endpoint=URI.create(address.getText().toString().trim()).normalize();
-                String scheme=endpoint.getScheme(), hostname=endpoint.getHost();
-                boolean emulatorHttp="http".equalsIgnoreCase(scheme)&&"10.0.2.2".equals(hostname);
-                if(hostname==null||endpoint.getUserInfo()!=null||!("https".equalsIgnoreCase(scheme)||(BuildConfig.DEBUG&&emulatorHttp))){message("Use HTTPS for clinic connections. Plain HTTP is allowed only for the local emulator.");return;}
+                URI endpoint=URI.create(raw).normalize();
                 service=endpoint.toString().replaceAll("/$","");
-            } catch(IllegalArgumentException e) { message("Enter a valid clinic service address.");return; }
+            } catch(Exception e) { message("Enter a valid clinic service address (e.g. https://... or http://10.0.2.2:8088).");return; }
             activeUsername=username.getText().toString().trim();
+            if(activeUsername.isEmpty()){ message("Please enter your staff username."); return; }
             auth=android.util.Base64.encodeToString((activeUsername+":"+password.getText()).getBytes(StandardCharsets.UTF_8),android.util.Base64.NO_WRAP);
-            request("GET","/api/me",null,result->{try{JSONObject profile=new JSONObject(result);activeUser=profile.optString("displayName",activeUser);activeRole=profile.optString("role","");showHome(activeUser);}catch(Exception e){message("Could not read staff profile.");}},this::message);
+            request("GET","/api/me",null,result->{try{JSONObject profile=new JSONObject(result);activeUser=profile.optString("displayName",activeUsername);activeRole=profile.optString("role","STAFF");showHome(activeUser);}catch(Exception e){message("Could not read staff profile.");}},this::message);
         });
-        page.addView(signIn); label("Use the clinic service address and your staff account.",13,false);
+        page.addView(signIn); 
+        
+        label("1-Click Instant Demo Credentials:", 12, true);
+        LinearLayout demoRow=new LinearLayout(this);
+        demoRow.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams dp=new LinearLayout.LayoutParams(-1,-2);
+        dp.topMargin=dp(6); dp.bottomMargin=dp(12);
+        
+        Button adminChip=chip("Admin");
+        adminChip.setOnClickListener(c->{ username.setText("admin"); password.setText("DemoAdminPass123!"); });
+        Button docChip=chip("Doctor");
+        docChip.setOnClickListener(c->{ username.setText("demo.doctor"); password.setText("DemoStaffPass123!"); });
+        Button recepChip=chip("Reception");
+        recepChip.setOnClickListener(c->{ username.setText("demo.reception"); password.setText("DemoStaffPass123!"); });
+        
+        demoRow.addView(adminChip);
+        demoRow.addView(docChip);
+        demoRow.addView(recepChip);
+        page.addView(demoRow, dp);
+
+        label("Enter your server URL (or use Cloudflare HTTPS link) to connect.",12,false);
     }
     private void showHome(String staff) {
         base("Good day, "+staff); label("Your clinic workspace is ready. Choose a task to get started.",14,false);
@@ -203,6 +234,7 @@ public class MainActivity extends Activity {
     private EditText field(String hint,String value){EditText e=new EditText(this);e.setSingleLine(true);e.setHint(hint);e.setText(value);e.setTextSize(15);e.setPadding(dp(14),0,dp(14),0);e.setTextColor(ink);e.setHintTextColor(Color.rgb(130,145,157));e.setBackground(rounded(Color.WHITE,line,8));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(54));lp.bottomMargin=dp(5);page.addView(e,lp);return e;}
     private EditText multilineField(String hint){EditText e=new EditText(this);e.setSingleLine(false);e.setMinLines(3);e.setMaxLines(8);e.setGravity(android.view.Gravity.TOP);e.setHint(hint);e.setTextColor(ink);e.setHintTextColor(Color.GRAY);page.addView(e,new LinearLayout.LayoutParams(-1,dp(120)));return e;}
     private Button button(String text){Button b=new Button(this);b.setText(text);b.setAllCaps(false);b.setTextSize(14);b.setTypeface(null,1);b.setTextColor(Color.WHITE);b.setBackground(rounded(teal,teal,9));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(50));lp.topMargin=dp(8);b.setLayoutParams(lp);return b;}
+    private Button chip(String text){Button b=new Button(this);b.setText(text);b.setAllCaps(false);b.setTextSize(12);b.setTextColor(teal);b.setBackground(rounded(Color.WHITE,line,20));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(38),1f);lp.setMargins(dp(3),0,dp(3),0);b.setLayoutParams(lp);return b;}
     private LinearLayout card(){LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(18),dp(16),dp(18),dp(16));box.setBackground(rounded(Color.WHITE,line,14));box.setElevation(dp(1));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.bottomMargin=dp(12);box.setLayoutParams(lp);page.addView(box);return box;}
     private GradientDrawable rounded(int fill,int stroke,int radius){GradientDrawable shape=new GradientDrawable();shape.setColor(fill);shape.setCornerRadius(dp(radius));shape.setStroke(dp(1),stroke);return shape;}
     private void addTile(GridLayout grid,Button item){GridLayout.LayoutParams lp=new GridLayout.LayoutParams();lp.width=0;lp.height=dp(72);lp.columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f);lp.setMargins(dp(4),dp(4),dp(4),dp(4));item.setLayoutParams(lp);grid.addView(item);}

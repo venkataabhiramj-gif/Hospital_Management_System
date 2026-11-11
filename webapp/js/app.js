@@ -49,6 +49,25 @@ function requireAuth(allowedProfile) {
   return user;
 }
 
+function toggleMobileSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  let backdrop = document.querySelector('.sidebar-backdrop');
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.className = 'sidebar-backdrop';
+    backdrop.onclick = toggleMobileSidebar;
+    document.body.appendChild(backdrop);
+  }
+  if (sidebar) {
+    const isOpen = sidebar.classList.toggle('mobile-open');
+    if (isOpen) {
+      backdrop.classList.add('active');
+    } else {
+      backdrop.classList.remove('active');
+    }
+  }
+}
+
 // Injects active user pill and synchronizes sidebar navigation according to role
 function syncHospitalInterface() {
   const path = (window.location.pathname || '').toLowerCase();
@@ -59,6 +78,71 @@ function syncHospitalInterface() {
   if (!user) {
     window.location.replace('/login.html');
     return;
+  }
+
+  // 0. Ensure Mobile Hamburger Toggle in Topbar
+  const topbarLeft = document.querySelector('.top-bar-left');
+  if (topbarLeft && !document.getElementById('mobile-nav-toggle-btn')) {
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.id = 'mobile-nav-toggle-btn';
+    toggleBtn.className = 'mobile-nav-toggle';
+    toggleBtn.setAttribute('aria-label', 'Open navigation menu');
+    toggleBtn.onclick = toggleMobileSidebar;
+    toggleBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>';
+    topbarLeft.prepend(toggleBtn);
+  }
+
+  // Ensure Mobile Bottom Navigation
+  if (!document.querySelector('.mobile-bottom-nav')) {
+    const bottomNav = document.createElement('nav');
+    bottomNav.className = 'mobile-bottom-nav';
+    const isPatient = user.profileType === 'PATIENT';
+    if (isPatient) {
+      bottomNav.innerHTML = `
+        <a href="/patient-portal.html" class="active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          <span>My Health</span>
+        </a>
+        <a href="/patient-portal.html#appointments-section">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
+          <span>Visits</span>
+        </a>
+        <a href="/patient-portal.html#billing-section">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+          <span>Bills</span>
+        </a>
+        <button type="button" onclick="logoutUser()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span>Sign Out</span>
+        </button>
+      `;
+    } else {
+      const currentPath = window.location.pathname;
+      bottomNav.innerHTML = `
+        <a href="/index.html" class="${currentPath.endsWith('/index.html') || currentPath === '/' ? 'active' : ''}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          <span>Overview</span>
+        </a>
+        <a href="/patients.html" class="${currentPath.endsWith('/patients.html') ? 'active' : ''}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+          <span>Patients</span>
+        </a>
+        <a href="/appointments.html" class="${currentPath.endsWith('/appointments.html') ? 'active' : ''}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
+          <span>Visits</span>
+        </a>
+        <a href="/billing.html" class="${currentPath.endsWith('/billing.html') ? 'active' : ''}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+          <span>Billing</span>
+        </a>
+        <button type="button" onclick="toggleMobileSidebar()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          <span>Menu</span>
+        </button>
+      `;
+    }
+    document.body.appendChild(bottomNav);
   }
 
   // 1. Update Topbar

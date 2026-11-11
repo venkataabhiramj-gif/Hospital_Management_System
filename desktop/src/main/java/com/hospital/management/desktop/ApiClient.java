@@ -18,20 +18,21 @@ final class ApiClient {
 
     CompletableFuture<String> login(String host, String username, String password) {
         try {
-            URI endpoint = URI.create(host.trim()).normalize();
-            String scheme = endpoint.getScheme();
-            String hostname = endpoint.getHost();
-            boolean localHttp = "http".equalsIgnoreCase(scheme)
-                    && hostname != null
-                    && (hostname.equalsIgnoreCase("localhost") || hostname.equals("127.0.0.1") || hostname.equals("::1"));
-            if (hostname == null || endpoint.getUserInfo() != null
-                    || !("https".equalsIgnoreCase(scheme) || localHttp)) {
-                return CompletableFuture.failedFuture(new IllegalArgumentException(
-                        "Use HTTPS for clinic connections. Plain HTTP is allowed only for localhost development."));
+            String rawHost = host == null ? "" : host.trim();
+            if (rawHost.isEmpty()) {
+                rawHost = "http://localhost:8088";
             }
+            if (!rawHost.startsWith("http://") && !rawHost.startsWith("https://")) {
+                if (rawHost.contains("trycloudflare.com") || rawHost.contains("onrender.com") || rawHost.contains(".app") || rawHost.contains(".com")) {
+                    rawHost = "https://" + rawHost;
+                } else {
+                    rawHost = "http://" + rawHost;
+                }
+            }
+            URI endpoint = URI.create(rawHost).normalize();
             base = endpoint.toString().replaceAll("/$", "");
-        } catch (IllegalArgumentException e) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Enter a valid clinic service address.", e));
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Please enter a valid clinic server address (e.g. http://localhost:8088).", e));
         }
         setCredentials(username,password);
         return get("/api/me");

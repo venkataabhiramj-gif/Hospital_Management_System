@@ -51,7 +51,12 @@ public class WorkflowController {
 
     @GetMapping("/me")
     Map<String,Object> currentStaffProfile() {
-        return db.queryForMap("SELECT id, username, display_name, role FROM staff_users WHERE id=? AND active=TRUE",currentStaffId());
+        Map<String, Object> row = db.queryForMap("SELECT id, username, display_name, role FROM staff_users WHERE id=? AND active=TRUE", currentStaffId());
+        Map<String, Object> result = new java.util.LinkedHashMap<>(row);
+        Object displayName = row.get("display_name");
+        if (displayName == null) displayName = row.get("DISPLAY_NAME");
+        result.put("displayName", displayName != null ? displayName : row.get("username"));
+        return result;
     }
 
     public record PatientInput(@NotBlank @Size(max=200) String fullName, @PastOrPresent LocalDate dateOfBirth, @Size(max=32) @Pattern(regexp="(^$|\\+?[0-9 ()-]{7,32})") String phone, Boolean duplicateReviewAcknowledged, @Size(max=500) String duplicateReviewReason, Long excludePatientId) {}
