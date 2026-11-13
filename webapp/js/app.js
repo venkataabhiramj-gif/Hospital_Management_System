@@ -1,4 +1,4 @@
-// ApexCare Memorial Hospital  -  ClinicDesk Outpatient System Controller
+/ ApexCare Memorial Hospital  -  ClinicDesk Outpatient System Controller
 const API_BASE = '/api';
 
 // ========================================================
@@ -226,7 +226,20 @@ function syncHospitalInterface() {
 }
 
 // Helper: Generic API client
+// Security helper: sanitize and escape HTML entities to prevent Stored & Reflected XSS
+function escapeHtml(text) {
+  if (text === null || text === undefined) return "";
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Helper: Generic API client with automatic Basic authorization & 401 session guard
 async function apiCall(endpoint, method = 'GET', data = null) {
+  const user = getAuthUser();
   const options = {
     method,
     headers: {
@@ -234,12 +247,20 @@ async function apiCall(endpoint, method = 'GET', data = null) {
       'Accept': 'application/json'
     }
   };
-  if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+  if (user && user.authHeader) {
+    options.headers['Authorization'] = user.authHeader;
+  }
+  if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE')) {
     options.body = JSON.stringify(data);
   }
 
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, options);
+    if (res.status === 401) {
+      console.warn('[EHR-API] 401 Unauthorized: session expired or credentials required.');
+      logoutUser();
+      throw new Error('Your session has expired. Please sign in again.');
+    }
     const text = await res.text();
     let result = {};
     try {
@@ -357,10 +378,10 @@ async function initDashboard() {
             <tr>
               <td><span class="mrn-badge">#APT-${a.id}</span></td>
               <td>
-                <div style="font-weight:700; color:var(--brand-navy);">${a.patientName}</div>
+                <div style="font-weight:700; color:var(--brand-navy);">${escapeHtml(a.patientName)}</div>
                 <div style="font-size:11px; color:var(--text-dim);">${a.patientId || ''}</div>
               </td>
-              <td><strong>${a.doctorName}</strong></td>
+              <td><strong>${escapeHtml(a.doctorName)}</strong></td>
               <td>${dateStr}</td>
               <td style="font-family: var(--font-mono);">${timeStr}</td>
               <td><span class="status-pill ${statusClass}">${a.status}</span></td>
@@ -567,15 +588,15 @@ function renderPatientsTable(list) {
         <div style="display:flex; align-items:center; gap:10px;">
           <div class="user-avatar" style="width:28px; height:28px; font-size:11px;">${getInitials(p.name)}</div>
           <div>
-            <strong style="color:var(--brand-navy);">${p.name}</strong>
+            <strong style="color:var(--brand-navy);">${escapeHtml(p.name)}</strong>
             <div style="font-size:11px; color:var(--text-dim);">${p.age || '32'} Yrs Â ·  ${p.gender || 'Unspecified'}</div>
           </div>
         </div>
       </td>
       <td><span class="vital-tag" style="font-size:11.5px; font-weight:700;">${p.bloodGroup || 'O+'}</span></td>
-      <td><span style="font-family: var(--font-mono);">${p.phone || p.contact || '+91 98450 00000'}</span></td>
+      <td><span style="font-family: var(--font-mono);">${escapeHtml(p.phone || p.contact || "+91 98450 00000")}</span></td>
       <td style="color:var(--text-muted); font-size:12px;">${p.email || (p.name ? p.name.toLowerCase().replace(/\s+/g, '.') + '@apexcare.org' : 'patient@apexcare.org')}</td>
-      <td style="color:var(--text-muted); font-size:12px; max-width:180px;">${p.address || 'Central Outpatient District'}</td>
+      <td style="color:var(--text-muted); font-size:12px; max-width:180px;">${escapeHtml(p.address || "Central Outpatient District")}</td>
       <td style="font-size:12px; color:var(--text-dim);">${p.registeredDate || '2026-11-10'}</td>
       <td>
         <button class="btn btn-danger btn-sm" onclick="archivePatient('${p.id}')">
@@ -681,12 +702,12 @@ function renderDoctorsTable(list) {
         <div style="display:flex; align-items:center; gap:10px;">
           <div class="user-avatar" style="width:28px; height:28px; font-size:11px;">${getInitials(d.name)}</div>
           <div>
-            <strong style="color:var(--brand-navy);">${d.name}</strong>
+            <strong style="color:var(--brand-navy);">${escapeHtml(d.name)}</strong>
             <div style="font-size:11px; color:var(--text-dim);">${d.qualification || 'MBBS, MD'}</div>
           </div>
         </div>
       </td>
-      <td><span class="mrn-badge">${d.specialization}</span></td>
+      <td><span class="mrn-badge">${escapeHtml(d.specialization)}</span></td>
       <td><span style="font-family: var(--font-mono);">${d.contact || d.phone || '+91 80 4000 1200'}</span></td>
       <td style="font-weight:700; color:var(--brand-navy);">${formatINR(d.consultationFee || 1000)}</td>
       <td><span class="status-pill status-active">Mon-Sat (09:00 - 17:00)</span></td>
@@ -763,7 +784,7 @@ function renderAppointmentsTable(list) {
           <strong style="color:var(--brand-navy);">${a.patientName}</strong>
           <div style="font-size:11px; color:var(--text-dim);">${a.patientId || ''}</div>
         </td>
-        <td><strong>${a.doctorName}</strong></td>
+        <td><strong>${escapeHtml(a.doctorName)}</strong></td>
         <td>${dateStr}</td>
         <td style="font-family: var(--font-mono);">${timeStr}</td>
         <td><span class="status-pill ${statusClass}">${a.status}</span></td>
@@ -793,7 +814,7 @@ async function initAppointments() {
     const doctorSelect = document.getElementById('appt-doctor-select');
     if (doctorSelect) {
       doctorSelect.innerHTML = '<option value="">-- Attending Clinician --</option>' +
-        doctors.map(d => `<option value="${d.id}">${d.name} (${d.specialization})</option>`).join('');
+        doctors.map(d => `<option value="${d.id}">${d.name} (${escapeHtml(d.specialization)})</option>`).join('');
     }
 
     const appointments = await apiCall('/appointments');
@@ -1050,7 +1071,7 @@ async function initRecords() {
     const doctorSelect = document.getElementById('rec-doctor-select');
     if (doctorSelect) {
       doctorSelect.innerHTML = '<option value="">-- Attending Clinician --</option>' +
-        doctors.map(d => `<option value="${d.id}" data-name="${d.name}">${d.name} (${d.specialization})</option>`).join('');
+        doctors.map(d => `<option value="${d.id}" data-name="${d.name}">${d.name} (${escapeHtml(d.specialization)})</option>`).join('');
       doctorSelect.onchange = function() {
         const selected = doctorSelect.options[doctorSelect.selectedIndex];
         document.getElementById('rec-doctor-name').value = selected.getAttribute('data-name') || '';
@@ -1069,13 +1090,13 @@ async function initRecords() {
       <tr>
         <td><span class="mrn-badge">#EHR-${r.recordId}</span></td>
         <td>
-          <div style="font-weight:700; color:var(--brand-navy);">${r.patientName}</div>
+          <div style="font-weight:700; color:var(--brand-navy);">${escapeHtml(r.patientName)}</div>
           <div style="font-size:11px; color:var(--text-dim);">${r.patientId}</div>
         </td>
-        <td><strong>${r.doctorName}</strong></td>
+        <td><strong>${escapeHtml(r.doctorName)}</strong></td>
         <td>
-          <div style="font-weight:600; color:var(--brand-navy);">${r.diagnosis}</div>
-          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${r.labTests || 'Routine examination'}</div>
+          <div style="font-weight:600; color:var(--brand-navy);">${escapeHtml(r.diagnosis)}</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${escapeHtml(r.labTests || "Routine examination")}</div>
         </td>
         <td>${r.recordDate}</td>
         <td>
@@ -1106,11 +1127,11 @@ function viewRecordDetail(recordId) {
     <div style="display:flex; flex-direction:column; gap:16px;">
       <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-subtle); padding-bottom:12px;">
         <div>
-          <h3 style="font-size:16px; font-weight:700; color:var(--brand-navy);">${r.patientName}</h3>
+          <h3 style="font-size:16px; font-weight:700; color:var(--brand-navy);">${escapeHtml(r.patientName)}</h3>
           <p style="font-size:12px; color:var(--text-muted);">MRN: <strong>${r.patientId}</strong>  ·  Date: <strong>${r.recordDate}</strong></p>
         </div>
         <div style="text-align:right;">
-          <div style="font-weight:700; color:var(--primary);">${r.doctorName}</div>
+          <div style="font-weight:700; color:var(--primary);">${escapeHtml(r.doctorName)}</div>
           <span style="font-size:11px; color:var(--text-dim);">Attending Physician</span>
         </div>
       </div>
@@ -1125,14 +1146,14 @@ function viewRecordDetail(recordId) {
       <div>
         <label style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted);">Prescribed Medications (Rx)</label>
         <div style="background:var(--bg-subtle); border:1px solid var(--border-card); border-radius:6px; padding:10px; font-size:12.5px; line-height:1.6; white-space:pre-wrap; margin-top:4px;">
-          ${r.prescription}
+          ${escapeHtml(r.prescription)}
         </div>
       </div>
 
       <div>
         <label style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted);">Clinical Notes & Assessment</label>
         <div style="background:var(--bg-subtle); border:1px solid var(--border-card); border-radius:6px; padding:10px; font-size:12.5px; color:var(--text-main); margin-top:4px;">
-          ${r.notes || 'Routine follow-up prescribed.'}
+          ${escapeHtml(r.notes || "Routine follow-up prescribed.")}
         </div>
       </div>
     </div>

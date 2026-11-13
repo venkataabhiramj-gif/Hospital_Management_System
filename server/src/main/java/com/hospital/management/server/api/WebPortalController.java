@@ -62,9 +62,11 @@ public class WebPortalController {
             username = username + (System.currentTimeMillis() % 1000);
         }
 
-        // Demo password hash for standard staff
+        String rawPass = String.valueOf(body.getOrDefault("password", ""));
+        if (rawPass.isBlank() || "null".equals(rawPass)) { rawPass = "DemoStaffPass123!"; }
+        String encodedPass = passwordEncoder.encode(rawPass);
         Long staffId = insert("INSERT INTO staff_users (username, password_hash, display_name, role) VALUES (?, ?, ?, 'DOCTOR')",
-                username, "$2a$12$e8wFw0YyQd78Z0Qc0aVvauL8O8bF7uC8WnS3yTqjJm9F.P7e4wVqW", name);
+                username, encodedPass, name);
 
         Long docId = insert("INSERT INTO doctors (staff_user_id, specialty, appointment_minutes) VALUES (?, ?, 20)",
                 staffId, spec);
@@ -460,11 +462,24 @@ public class WebPortalController {
     }
 
     @GetMapping("/patient/overview")
-    public Map<String, Object> patientOverview(@RequestParam String patientNumber) {
+    public Map<String, Object> patientOverview(@RequestParam String patientNumber,
+                                               @RequestParam(required = false) String dob,
+                                               Authentication auth) {
         String pnum = patientNumber.trim();
-        List<Map<String, Object>> patients = db.queryForList(
-                "SELECT id, patient_number, full_name, date_of_birth, phone FROM patients WHERE (patient_number = ? OR CAST(id AS VARCHAR) = ?) AND active = TRUE LIMIT 1",
-                pnum, pnum);
+        boolean isStaff = auth != null && auth.isAuthenticated() &&
+                auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().startsWith("ROLE_"));
+        List<Map<String, Object>> patients;
+        if (isStaff) {
+            patients = db.queryForList(
+                    "SELECT id, patient_number, full_name, date_of_birth, phone FROM patients WHERE (patient_number = ? OR CAST(id AS VARCHAR) = ?) AND active = TRUE LIMIT 1",
+                    pnum, pnum);
+        } else if (dob != null && !dob.isBlank()) {
+            patients = db.queryForList(
+                    "SELECT id, patient_number, full_name, date_of_birth, phone FROM patients WHERE (patient_number = ? OR CAST(id AS VARCHAR) = ?) AND date_of_birth = ? AND active = TRUE LIMIT 1",
+                    pnum, pnum, java.sql.Date.valueOf(dob.trim()));
+        } else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access to health records requires identity verification or clinical authorization.");
+        }
         if (patients.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Patient not found");
         }

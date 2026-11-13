@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -248,6 +248,7 @@
         const res = await apiCall('/auth/login', 'POST', payload);
         if (res.success) {
           showAlert(`Welcome, ${res.displayName}! Loading portal...`, 'success');
+          if (activeProfileType !== 'PATIENT') { res.authHeader = 'Basic ' + btoa(payload.username + ':' + payload.password); }
           sessionStorage.setItem('apexcare_auth', JSON.stringify(res));
           setTimeout(() => {
             if (res.profileType === 'PATIENT') {
