@@ -1476,14 +1476,21 @@ async function initPharmacy() {
   if (tbody) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 32px; color: var(--text-dim);">Loading pharmacy formulary...</td></tr>';
   }
+  const batchTbody = document.getElementById('batches-table-body');
+  if (batchTbody) {
+    batchTbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 24px; color: var(--text-dim);">Loading batch tracking lots...</td></tr>';
+  }
+
   try {
-    const [medicines, alerts] = await Promise.all([
+    const [medicines, alerts, batches] = await Promise.all([
       apiCall('/inventory/medicines'),
-      apiCall('/inventory/alerts').catch(() => ({ lowStock: [], expiringWithin30Days: [] }))
+      apiCall('/inventory/alerts').catch(() => ({ lowStock: [], expiringWithin30Days: [] })),
+      apiCall('/inventory/batches').catch(() => [])
     ]);
 
     window._cachedMedicines = medicines || [];
     window._cachedAlerts = alerts || { lowStock: [], expiringWithin30Days: [] };
+    window._cachedBatches = batches || [];
 
     // Update Quick Stats
     const totalMedsEl = document.getElementById('stat-total-medicines');
@@ -1513,6 +1520,7 @@ async function initPharmacy() {
     }
 
     renderPharmacyTable(medicines);
+    renderBatchesTable(batches);
   } catch (err) {
     showAlert('Error loading pharmacy: ' + err.message, 'error');
   }
@@ -1555,36 +1563,114 @@ function renderPharmacyTable(list) {
         <td><strong style="color:${qty <= reorder ? '#dc2626' : 'var(--brand-navy)'};">${qty}</strong></td>
         <td>${statusBadge}</td>
         <td>
-          ${canArchive ? `
-            <button class="btn btn-sm btn-danger" onclick="archiveMedicine(${m.id})">
-              Archive
+          <div style="display:flex; gap:6px; align-items:center;">
+            <button class="btn btn-sm btn-secondary" onclick="openReceiveBatchModal(${m.id})" title="Receive inbound batch for this medicine">
+              + Batch
             </button>
-          ` : `
-            <span style="font-size:11px; color:var(--text-dim);">Active</span>
-          `}
+            ${canArchive ? `
+              <button class="btn btn-sm btn-danger" onclick="archiveMedicine(${m.id})" title="Archive formulary item">
+                Archive
+              </button>
+            ` : `
+              <span style="font-size:11px; color:var(--text-dim);">Active</span>
+            `}
+          </div>
         </td>
       </tr>
     `;
   }).join('');
 }
 
+function renderBatchesTable(batches) {
+  const tbody = document.getElementById('batches-table-body');
+  if (!tbody) return;
+  if (!batches || batches.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 24px; color: var(--text-dim);">No active batches recorded in inventory. Click "+ Inbound Batch" above to receive medicine stock.</td></tr>';
+    return;
+  }
+
+  const today = new Date();
+  tbody.innerHTML = batches.map(b => {
+    const expiry = new Date(b.expiry_date);
+    const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+    let expiryBadge = `<span style="font-family:var(--font-mono);">${escapeHtml(b.expiry_date)}</span>`;
+    if (diffDays <= 0) {
+      expiryBadge = `<span style="font-family:var(--font-mono); color:#b91c1c; font-weight:700;">${escapeHtml(b.expiry_date)} (Expired)</span>`;
+    } else if (diffDays <= 30) {
+      expiryBadge = `<span style="font-family:var(--font-mono); color:#b45309; font-weight:700;">${escapeHtml(b.expiry_date)} (${diffDays}d left)</span>`;
+    }
+
+    return `
+      <tr>
+        <td><span class="mrn-badge" style="font-family:var(--font-mono);">#${b.batch_id}</span></td>
+        <td><strong style="font-family:var(--font-mono); color:var(--brand-navy);">${escapeHtml(b.batch_number)}</strong></td>
+        <td>
+          <div>
+            <strong>${escapeHtml(b.generic_name)}</strong>
+            <div style="font-size:11px; color:var(--text-dim);">${escapeHtml(b.medicine_code || '')}</div>
+          </div>
+        </td>
+        <td>${expiryBadge}</td>
+        <td><strong style="color:var(--brand-navy); font-size:13px;">${b.quantity_on_hand}</strong></td>
+        <td><span style="font-size:12px; color:var(--text-muted);">${escapeHtml(b.supplier || 'Direct Depot')}</span></td>
+        <td><span style="font-family:var(--font-mono); font-weight:600;">${formatINR(b.purchase_price)}</span></td>
+        <td>
+          <button class="btn btn-sm btn-secondary" onclick="openAdjustStockModal(${b.batch_id})" title="Adjust stock count with audit trail">
+            Adjust
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+window.renderBatchesTable = renderBatchesTable;
+
+function openReceiveBatchModal(medicineId) {
+  openModal('modal-receive-batch');
+  if (medicineId) {
+    const sel = document.getElementById('batch-med-select');
+    if (sel) sel.value = String(medicineId);
+  }
+}
+window.openReceiveBatchModal = openReceiveBatchModal;
+
+function openAdjustStockModal(batchId) {
+  openModal('modal-stock-adjust');
+  if (batchId) {
+    const input = document.getElementById('adjust-batch-id');
+    if (input) input.value = String(batchId);
+  }
+}
+window.openAdjustStockModal = openAdjustStockModal;
+
 function filterPharmacyTable() {
   const input = document.getElementById('pharmacy-search');
   if (!input) return;
   const q = input.value.toLowerCase().trim();
   const list = window._cachedMedicines || [];
+  const batchList = window._cachedBatches || [];
   if (!q) {
     renderPharmacyTable(list);
+    renderBatchesTable(batchList);
     return;
   }
-  const filtered = list.filter(m =>
+  const filteredMeds = list.filter(m =>
     (m.code && m.code.toLowerCase().includes(q)) ||
     (m.generic_name && m.generic_name.toLowerCase().includes(q)) ||
     (m.brand_name && m.brand_name.toLowerCase().includes(q)) ||
     (m.dosage_form && m.dosage_form.toLowerCase().includes(q)) ||
     (m.strength && m.strength.toLowerCase().includes(q))
   );
-  renderPharmacyTable(filtered);
+  renderPharmacyTable(filteredMeds);
+
+  const filteredBatches = batchList.filter(b =>
+    (b.batch_number && b.batch_number.toLowerCase().includes(q)) ||
+    (b.generic_name && b.generic_name.toLowerCase().includes(q)) ||
+    (b.medicine_code && b.medicine_code.toLowerCase().includes(q)) ||
+    (b.supplier && b.supplier.toLowerCase().includes(q)) ||
+    String(b.batch_id) === q
+  );
+  renderBatchesTable(filteredBatches);
 }
 window.filterPharmacyTable = filterPharmacyTable;
 

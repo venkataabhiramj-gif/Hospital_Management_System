@@ -390,6 +390,15 @@ public class WorkflowController {
     @GetMapping("/inventory/medicines")
     List<Map<String,Object>> medicines() { LocalDate clinicToday=LocalDate.now(java.time.ZoneId.of("Asia/Kolkata")); return db.queryForList("SELECT m.id,m.code,m.generic_name,m.brand_name,m.strength,m.dosage_form,m.unit,m.reorder_level,m.sale_price,m.active,COALESCE(SUM(CASE WHEN b.expiry_date>=? THEN b.quantity_on_hand ELSE 0 END),0) quantity_on_hand FROM medicines m LEFT JOIN medicine_batches b ON b.medicine_id=m.id WHERE m.active=TRUE GROUP BY m.id,m.code,m.generic_name,m.brand_name,m.strength,m.dosage_form,m.unit,m.reorder_level,m.sale_price,m.active ORDER BY m.generic_name",clinicToday); }
 
+    @GetMapping("/inventory/batches")
+    List<Map<String,Object>> allBatches(@RequestParam(required=false) Long medicineId) {
+        String sql = "SELECT b.id batch_id, b.medicine_id, m.code medicine_code, m.generic_name, m.brand_name, b.batch_number, b.expiry_date, b.quantity_on_hand, b.purchase_price, b.supplier, b.received_at FROM medicine_batches b JOIN medicines m ON m.id=b.medicine_id WHERE m.active=TRUE ";
+        if (medicineId != null) {
+            return db.queryForList(sql + "AND b.medicine_id=? ORDER BY b.expiry_date ASC", medicineId);
+        }
+        return db.queryForList(sql + "ORDER BY b.expiry_date ASC");
+    }
+
     @GetMapping("/inventory/alerts")
     Map<String,Object> stockAlerts() {
         LocalDate clinicToday=LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"));

@@ -199,11 +199,53 @@
           </table>
         </div>
       </section>
+
+      <!-- Active Batches & Expiry Lots Panel -->
+      <section class="panel-card" style="margin-top: 24px;">
+        <div class="panel-header">
+          <div>
+            <h2>Active Batches & Lot Expiry Tracking</h2>
+            <p>FEFO (First-Expired, First-Out) lot control, shelf-life monitoring, and audited quantity adjustments</p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-sm btn-secondary" onclick="openModal('modal-receive-batch')">
+              + Inbound Batch
+            </button>
+            <button class="btn btn-sm btn-secondary" onclick="initPharmacy()">
+              Refresh Batches
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Batch ID</th>
+                <th>Batch #</th>
+                <th>Medicine / Formulary Item</th>
+                <th>Expiry Date</th>
+                <th>Quantity on Hand</th>
+                <th>Supplier</th>
+                <th>Unit Cost (INR)</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="batches-table-body">
+              <tr>
+                <td colspan="8" style="text-align:center; padding: 24px; color: var(--text-dim);">
+                  Loading batch tracking lots...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   </main>
 
   <!-- MODAL: Add New Medicine Form -->
-  <div class="modal" id="modal-add-medicine">
+  <div class="modal-overlay" id="modal-add-medicine">
     <div class="modal-dialog">
       <div class="modal-header">
         <div>
@@ -266,7 +308,7 @@
   </div>
 
   <!-- MODAL: Receive Supplier Batch -->
-  <div class="modal" id="modal-receive-batch">
+  <div class="modal-overlay" id="modal-receive-batch">
     <div class="modal-dialog">
       <div class="modal-header">
         <div>
@@ -315,7 +357,7 @@
   </div>
 
   <!-- MODAL: Dispensing Station -->
-  <div class="modal" id="modal-dispense-rx">
+  <div class="modal-overlay" id="modal-dispense-rx">
     <div class="modal-dialog">
       <div class="modal-header">
         <div>
@@ -357,7 +399,7 @@
   </div>
 
   <!-- MODAL: Stock Adjustment -->
-  <div class="modal" id="modal-stock-adjust">
+  <div class="modal-overlay" id="modal-stock-adjust">
     <div class="modal-dialog">
       <div class="modal-header">
         <div>
