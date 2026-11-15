@@ -33,7 +33,11 @@
 7. [Frontend Engineering & Mobile UX Optimization](#7-frontend-engineering--mobile-ux-optimization)
    - [Design Tokens & Healthcare Color Psychology](#71-design-tokens--healthcare-color-psychology)
    - [Responsive Mobile Drawer & Sticky Bottom Bar](#72-responsive-mobile-drawer--sticky-bottom-bar)
-8. [The 5 Real-World Engineering Bugs We Solved (War Stories)](#8-the-5-real-world-engineering-bugs-we-solved-war-stories)
+8. [The 8 Real-World Engineering Bugs We Solved (War Stories)](#8-the-8-real-world-engineering-bugs-we-solved-war-stories)
+   - [8.1. Enterprise Security Hardening & Vulnerability Remediation (OWASP Top 10)](#81-enterprise-security-hardening--vulnerability-remediation-owasp-top-10)
+   - [8.2. Secrets Management & Is `.env` Visible to Everyone?](#82-secrets-management--is-env-visible-to-everyone)
+   - [8.3. Full Feature Parity & Complete Add/Delete Lifecycle Across Web, Desktop, and Mobile](#83-full-feature-parity--complete-adddelete-lifecycle-across-web-desktop-and-mobile)
+   - [8.4. Automated Verification: The 30-Point Runtime Test Harness (`test_runtime.ps1`)](#84-automated-verification-the-30-point-runtime-test-harness-test_runtimeps1)
 9. [Ace Your Technical Interview or University Viva](#9-ace-your-technical-interview-or-university-viva)
 10. [Junior Developer Glossary of Terms](#10-junior-developer-glossary-of-terms)
 
@@ -557,9 +561,9 @@ To ensure page content is not hidden behind this sticky bottom bar, `.main-wrapp
 
 ---
 
-## 8. The 5 Real-World Engineering Bugs We Solved (War Stories)
+## 8. The 8 Real-World Engineering Bugs We Solved (War Stories)
 
-In your engineering career, the code you write when everything works is only 20% of your job. The other 80% is diagnosing subtle, multi-layered bugs. Here are the 5 real-world bugs we identified and fixed in this project — memorize these, as they make fantastic interview stories!
+In your engineering career, the code you write when everything works is only 20% of your job. The other 80% is diagnosing subtle, multi-layered bugs. Here are the 8 real-world bugs we identified and fixed in this project — memorize these, as they make fantastic interview stories!
 
 ### War Story 1: The Spring Boot Ambiguous Mapping Crash
 - **The Symptom**: When starting the server, Spring Boot abruptly crashed with:  
@@ -584,8 +588,23 @@ In your engineering career, the code you write when everything works is only 20%
 
 ### War Story 5: The Android APK Download `f.txt` Failure
 - **The Symptom**: Clicking "Download Android App" on mobile downloaded a file named `f.txt` with the text `"File wasn't available on site"` instead of installing the app.
-- **The Cause**: Spring Security intercepted the static file request and issued a 401 redirect because the file path wasn't whitelisted, and the browser received a generic HTML error page which it saved as text.
+- **The Cause**: Spring Security intercepted the static file request and issued a 401 redirect because the file path wasn't whitelisted, and the browser received a generic HTML error page which it saved as text. Additionally, browser extensions or ad-blockers intercepting background tracking triggers create phantom `f.txt` downloads in Chromium.
 - **The Solution**: Created a dedicated `DownloadController.java` with explicit binary headers (`Content-Type: application/vnd.android.package-archive`) and whitelisted `/downloads/**` in `SecurityConfiguration.java`.
+
+### War Story 6: The Pharmacy Modal & Form-Grid CSS Namespace Disconnect
+- **The Symptom**: Clicking "+ Add Medicine", "Receive Batch", "Dispense Rx", or "Adjust Stock" on the Pharmacy page resulted in modals appearing unstyled and broken at the very bottom of the DOM or failing to pop up.
+- **The Cause**: CSS class naming divergence. While other pages used `.modal-overlay`, `pharmacy.html` used `<div class="modal">` without the `-overlay` suffix. Furthermore, `pharmacy.html` relied on clinical classes (`.panel-card`, `.panel-header`, `.form-grid`, `.metric-badge`, `.metric-footer`) that were never defined in `style.css`. Because `.form-grid` had no grid declaration, form inputs collapsed or overflowed.
+- **The Solution**: Updated `style.css` to alias `.modal` and `.modal-overlay` with backdrop blur and centered card transforms, defined `.panel-card`, `.panel-header`, `.metric-badge`, and implemented `.form-grid` as a responsive 2-column layout collapsing to 1-column on mobile screens (`@media (max-width: 640px)`). Updated all modal markup in `pharmacy.html` to `modal-overlay`.
+
+### War Story 7: The Batch Visibility Gap & FEFO Expiry Architecture
+- **The Symptom**: Pharmacists attempting to perform inventory adjustments (`POST /api/inventory/adjustments`) were blocked because the dialog required entering a `Batch ID *`, but nowhere on the UI was a list of batches, lot numbers, or batch IDs displayed. Pharmacists had to guess internal database primary keys.
+- **The Cause**: The backend only exposed medicine aggregates (`/api/inventory/medicines`) and summary alerts (`/api/inventory/alerts`), but had no endpoint to query individual lot inventory.
+- **The Solution**: Added an `@GetMapping("/inventory/batches")` endpoint in `WorkflowController.java` joining `medicine_batches` and `medicines` sorted by FEFO (`ORDER BY b.expiry_date ASC`). Built a dedicated "Active Batches & Lot Expiry Tracking" table in `pharmacy.html` with color-coded shelf-life indicators, added 1-click `+ Batch` and `Adjust` action shortcuts that pre-populate modal inputs, and unified the search filter in `app.js` to search both drugs and lots concurrently.
+
+### War Story 8: The SQL Schema Column Mismatch (`b.created_at` vs `b.received_at`)
+- **The Symptom**: When calling the newly created `/api/inventory/batches` endpoint, Spring Boot returned HTTP 500 `BadSqlGrammarException: Column "b.created_at" not found`.
+- **The Cause**: Flyway migration `V1__initial_schema.sql` defined the timestamp column in `medicine_batches` as `received_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP`, whereas the new controller query requested `b.created_at`.
+- **The Solution**: Aligned the SQL query with the schema (`b.received_at`), recompiled `:server:bootJar`, and validated that the JSON payload returns full batch metadata.
 
 
 ---
@@ -686,6 +705,7 @@ In many legacy systems, features exist on the web that aren't on mobile, or desk
 | Action | HTTP Endpoint | Web Portal | Desktop App | Android Mobile | Authorized Roles |
 | :--- | :--- | :---: | :---: | :---: | :--- |
 | **Formulary Directory** | `GET /api/inventory/medicines` | ✅ Live Table | ✅ Stock View | ✅ Availability | `ADMIN`, `PHARMACIST`, `DOCTOR` |
+| **Batch & Lot Tracking** | `GET /api/inventory/batches` | ✅ Live Lots Table | ✅ Stock View | ✅ Lot Directory | `ADMIN`, `PHARMACIST` |
 | **Stock Alerts & Expiry** | `GET /api/inventory/alerts` | ✅ Metric Cards | ✅ Alerts Dialog | ✅ Alerts View | `ADMIN`, `PHARMACIST` |
 | **Add New Medicine** | `POST /api/inventory/medicines` | ✅ Add Modal | ✅ Catalogue Card | ✅ Add Drug Form | `ADMIN`, `PHARMACIST` |
 | **Receive Batch** | `POST /api/inventory/receipts` | ✅ Batch Modal | ✅ Receive Card | ✅ Batch Form | `ADMIN`, `PHARMACIST` |
@@ -701,6 +721,60 @@ The system strictly enforces the principle of least privilege:
 - **`PHARMACIST` (Dispensary)**: Manages drug formulary, receives batches with expiry dates, dispenses medications using First-Expired-First-Out (FEFO), reviews substitution history, and archives obsolete drugs. Cannot conduct clinical consultations or access billing refunds.
 - **`BILLING` (Revenue Cycle)**: Manages service catalogues, generates itemized invoices from finalized visits, processes payments (Cash, UPI, Card, NetBanking), and issues audited refunds.
 - **`PATIENT` (Self-Service)**: Accesses only their own health portal using multi-factor identity verification (MRN + Date of Birth). Can view personal visit summaries, prescriptions, invoices, and book upcoming appointments.
+
+---
+
+## 8.4. Automated Verification: The 30-Point Runtime Test Harness (`test_runtime.ps1`)
+
+In university projects or novice development, testing is often done by hand: clicking around a browser to see if things "look okay". In production healthcare systems, **manual testing alone is dangerous**:
+- When you patch a security rule in Spring Security to restrict doctors from admin endpoints, how do you guarantee you didn't accidentally break receptionist patient registration?
+- When you update the database query for pharmacy batches, how do you know patient MRN lookups still work?
+- How do you prove that an unauthenticated attacker cannot access patient medical charts?
+
+To solve this, we engineered an automated, scriptable runtime verification harness: **`test_runtime.ps1`**.
+
+### 1. How the Harness Works:
+The test harness runs against the live HTTP service on port 8088. It uses PowerShell's `Invoke-RestMethod` and `Invoke-WebRequest` to simulate real HTTP client requests with exact HTTP headers:
+
+```powershell
+# Helper function generating Basic Auth headers
+function Basic-Header($user, $pass) {
+    $pair = "$($user):$($pass)"
+    $encoded = [Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($pair))
+    return @{ "Authorization" = "Basic $encoded" }
+}
+```
+
+### 2. The 30 Test Suites at a Glance:
+1. **Static Web Page Availability (10 Tests)**: Probes `/`, `/index.html`, `/patients.html`, `/doctors.html`, `/appointments.html`, `/pharmacy.html`, `/billing.html`, `/records.html`, `/login.html`, and `/patient-portal.html` to guarantee HTTP 200 responses.
+2. **Binary APK Streaming (1 Test)**: Asserts that `/downloads/apexcare-mobile.apk` exists, returns HTTP 200, and is greater than 50 KB.
+3. **Authentication Verification (1 Test)**: Authenticates as `admin` and verifies role is `ADMIN`.
+4. **Patient Record CRUD Lifecycle (4 Tests)**:
+   - Registers a new patient with random MRN via `POST /api/patients`.
+   - Tests soft deletion via query parameter (`DELETE /api/patients?id=...`).
+   - Registers a second patient.
+   - Tests path-variable deletion (`DELETE /api/patients/{id}`).
+5. **Pharmacy & Stock Lifecycle (5 Tests)**:
+   - Creates a new drug product (`POST /api/inventory/medicines`).
+   - Verifies the drug appears in the active formulary (`GET /api/inventory/medicines`).
+   - Ingests an inbound batch (`POST /api/inventory/receipts`).
+   - Applies an audited stock adjustment and verifies quantity (`POST /api/inventory/adjustments`).
+   - Archives the medicine and verifies it is removed from active listings (`DELETE /api/inventory/medicines/{id}`).
+6. **Autonomous Clinical Automation Engine (2 Tests)**: Triggers an immediate automation cycle (`POST /api/automation/run-now`) and asserts telemetry status is `ACTIVE`.
+7. **Role-Based Access Control (RBAC) Enforcement (5 Tests)**:
+   - Tests `demo.doctor` attempting to access `/api/admin/users` -> **Strictly asserts HTTP 403 Forbidden**.
+   - Tests `demo.doctor` attempting to delete a patient -> **Strictly asserts HTTP 403 Forbidden**.
+   - Tests `demo.doctor` attempting to receive stock batches -> **Strictly asserts HTTP 403 Forbidden**.
+   - Tests `demo.reception` registering a patient -> **Asserts success**.
+   - Tests `demo.reception` attempting to delete a patient -> **Strictly asserts HTTP 403 Forbidden**.
+8. **Patient Portal IDOR & Data Leak Protection (2 Tests)**:
+   - Attempts to access patient records (`/api/patient/overview?mrn=MRN-00001`) without Date of Birth -> **Asserts rejected (HTTP 400)**.
+   - Proves that knowing an MRN is insufficient to view sensitive health records.
+
+### 3. Why This Matters for Your Career:
+When interviewers ask, *"How do you test your software?"*, amateur developers say *"I tested it in the browser"*. 
+Senior developers say:
+> *"We implemented a 30-assertion automated regression and RBAC test suite that validates static assets, binary downloads, CRUD lifecycles, and specifically asserts HTTP 403 Forbidden on privilege boundaries and 400 on IDOR attacks. It runs in under 10 seconds and verifies system integrity before any deployment."*
 
 ---
 

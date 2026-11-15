@@ -75,6 +75,7 @@ All three client applications connect to the **same centralized database** (embe
 | **📅 Outpatient Scheduling (OPD)** | Multi-specialty booking engine with **transactional double-booking prevention**, check-in status lifecycles (`SCHEDULED` -> `IN_CONSULTATION` -> `COMPLETED`), and waitlist management. |
 | **💳 Revenue Cycle Management (RCM)** | Point-of-care invoicing engine enforcing financial contracts, multi-tier discount application, statutory GST tax computation, balance reconciliation, and printable tax receipts. |
 | **📋 Electronic Health Records (EHR)** | Clinical progress notes, ICD-10 indication tracking, structured prescription dosing regimens (Rx), diagnostic lab/radiology requisitions, and longitudinal chart reviews. |
+| **💊 Pharmacy & Medicine Inventory** | Central formulary management, supplier batch receipts, FEFO (First-Expired, First-Out) prescription dispensing, lot-level shelf-life tracking (color-coded <=30d alerts), and audited stock count adjustments. |
 | **📦 Android APK Distribution Center** | Built-in streaming binary endpoint (`/downloads/apexcare-mobile.apk`) delivering the signed mobile application directly to Android devices without third-party app stores. |
 
 ---
@@ -188,7 +189,33 @@ The central Spring Boot service exposes a comprehensive JSON API:
 | `POST` | `/api/appointments`| Book appointment with conflict prevention | Staff |
 | `POST` | `/api/billing/invoices` | Generate GST tax invoice & calculate balance | Staff |
 | `GET` | `/api/records` | Query Electronic Health Records and notes | Staff / Doctor |
+| `GET` | `/api/inventory/medicines` | Retrieve active medicine formulary with stock on hand | Staff |
+| `GET` | `/api/inventory/batches` | Query all active batches ordered by FEFO expiry date | Staff |
+| `GET` | `/api/inventory/alerts` | Live low-stock alerts and batches expiring within 30 days | Staff |
+| `POST` | `/api/inventory/medicines` | Register new medicine into the central formulary | Admin / Pharmacist |
+| `POST` | `/api/inventory/receipts` | Receive inbound supplier medicine batch into inventory | Admin / Pharmacist |
+| `POST` | `/api/inventory/adjustments` | Record audited inventory stock adjustment (+ or -) | Admin / Pharmacist |
+| `DELETE` | `/api/inventory/medicines/{id}` | Archive medicine from active formulary | Admin / Pharmacist |
+| `POST` | `/api/prescription-items/{id}/dispense` | Dispense prescribed drug items via FEFO rule | Admin / Pharmacist |
 | `GET` | `/downloads/apexcare-mobile.apk` | Stream latest Android APK binary | Public |
+
+---
+
+## 🧪 Comprehensive Automated System Verification
+
+ApexCare includes an end-to-end automated runtime verification test suite (`test_runtime.ps1`):
+
+```powershell
+.\test_runtime.ps1
+```
+
+This test suite executes **30 automated validation checks** against the live system:
+- **Static Assets & Binary Streaming**: Verifies all 10 web portal pages and validates streaming of the 94 KB Android APK.
+- **Authentication & Profiles**: Validates Basic Auth credential exchange and profile retrieval.
+- **Patient Record Lifecycle**: Adds outpatient records, queries MPI, updates records, and verifies soft-deletion/archival by administrators.
+- **Pharmacy Record Lifecycle**: Creates formulary drugs, receives inbound lots, adjusts counts with an audit trail, and archives medicines.
+- **Role-Based Access Control (RBAC)**: Enforces HTTP 403 Forbidden on doctors attempting to access admin user management or delete patients, and receptionists attempting to delete records or receive inventory.
+- **Security & IDOR Protection**: Tests unauthenticated patient portal requests to ensure medical records cannot be accessed without matching Date of Birth.
 
 ---
 
