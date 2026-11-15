@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pharmacy & Inventory Management &mdash; ApexCare Memorial Hospital</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-symbol">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h2>ApexCare</h2>
+        <span>ClinicDesk HIS</span>
+      </div>
+    </div>
+
+    <div class="nav-section-label">Clinic Workspace</div>
+    <ul class="sidebar-nav">
+      <li class="nav-item">
+        <a href="/" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+          <span>Operations Dashboard</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/patients.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <span>Master Patient Index</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/doctors.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"></path><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"></path><circle cx="20" cy="10" r="2"></circle></svg>
+          <span>Clinician Directory</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/appointments.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span>Encounters & Booking</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/pharmacy.html" class="nav-link active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10.5 20.5l10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg>
+          <span>Pharmacy & Stock</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/billing.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+          <span>RCM & Invoicing</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/records.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          <span>Electronic Health Records</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-facility-badge">
+      <div class="facility-dot"></div>
+      <div class="facility-meta">
+        <h4>ApexCare Memorial (Fac 01)</h4>
+        <p>Unified DB: data/hospital.mv.db</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Application Wrapper -->
+  <main class="main-wrapper">
+    <!-- Top Utility Bar -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <div class="page-heading">
+          <h1>Pharmacy & Medicine Inventory</h1>
+          <p>Real-time drug catalogue, stock batches, FEFO dispensing, and expiry tracking</p>
+        </div>
+      </div>
+      <div class="top-bar-right">
+        <div class="shift-indicator">
+          <span class="pulse-live"></span>
+          <span>Central Pharmacy Active</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <div class="content-container">
+      <div id="global-alert" class="alert"></div>
+      <div id="alert-container"></div>
+
+      <!-- Quick Stats Metrics -->
+      <section class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Active Medicines</span>
+            <span class="metric-badge">Catalogue</span>
+          </div>
+          <div class="metric-value" id="stat-total-medicines">&mdash;</div>
+          <div class="metric-footer">Standard clinical formulary items</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Low Stock Warnings</span>
+            <span class="metric-badge alert" id="badge-low-stock">0 Alerts</span>
+          </div>
+          <div class="metric-value" id="stat-low-stock">&mdash;</div>
+          <div class="metric-footer">Items at or below reorder threshold</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Expiring in 30 Days</span>
+            <span class="metric-badge alert" id="badge-expiring">0 Batches</span>
+          </div>
+          <div class="metric-value" id="stat-expiring">&mdash;</div>
+          <div class="metric-footer">FEFO priority dispensing required</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Total Units on Hand</span>
+            <span class="metric-badge">Stocked</span>
+          </div>
+          <div class="metric-value" id="stat-total-units">&mdash;</div>
+          <div class="metric-footer">Available across all active batches</div>
+        </div>
+      </section>
+
+      <!-- Action & Search Toolbar -->
+      <div class="panel-card" style="margin-bottom: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:280px;">
+            <input type="text" id="pharmacy-search" class="form-control" placeholder="Search medicines by generic name, brand or code..." onkeyup="filterPharmacyTable()">
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="openModal('modal-add-medicine')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Add Medicine
+            </button>
+            <button class="btn btn-secondary" onclick="openModal('modal-receive-batch')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line></svg>
+              Receive Batch
+            </button>
+            <button class="btn btn-secondary" onclick="openModal('modal-dispense-rx')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.5 20.5l10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg>
+              Dispense Rx
+            </button>
+            <button class="btn btn-secondary" onclick="openModal('modal-stock-adjust')">
+              Adjust Stock
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Medicine Catalogue Table Panel -->
+      <section class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2>Medicine Formulary & Stock Balance</h2>
+            <p>Live inventory counts updated upon every dispensing, receipt, or adjustment</p>
+          </div>
+          <div>
+            <button class="btn btn-sm btn-secondary" onclick="initPharmacy()">
+              Refresh Inventory
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Item Code</th>
+                <th>Generic & Brand Name</th>
+                <th>Strength & Form</th>
+                <th>Unit</th>
+                <th>Sale Price (INR)</th>
+                <th>Stock on Hand</th>
+                <th>Inventory Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="pharmacy-table-body">
+              <tr>
+                <td colspan="8" style="text-align:center; padding: 32px; color: var(--text-dim);">
+                  Loading pharmacy formulary...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- MODAL: Add New Medicine Form -->
+  <div class="modal" id="modal-add-medicine">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3>Add Medicine to Formulary</h3>
+          <p>Register a new clinical drug product in the central catalogue</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-add-medicine')">&times;</button>
+      </div>
+      <form id="form-add-medicine" onsubmit="handleAddMedicine(event)">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Medicine Code *</label>
+              <input type="text" id="med-code" class="form-control" placeholder="e.g. MED-PCM-500" required>
+            </div>
+            <div class="form-group">
+              <label>Generic Name *</label>
+              <input type="text" id="med-name" class="form-control" placeholder="e.g. Paracetamol" required>
+            </div>
+            <div class="form-group">
+              <label>Brand Name</label>
+              <input type="text" id="med-brand" class="form-control" placeholder="e.g. Dolo 650 / Calpol">
+            </div>
+            <div class="form-group">
+              <label>Strength</label>
+              <input type="text" id="med-strength" class="form-control" placeholder="e.g. 500mg or 10mg/5ml">
+            </div>
+            <div class="form-group">
+              <label>Dosage Form</label>
+              <select id="med-form" class="form-control">
+                <option value="TABLET">Tablet</option>
+                <option value="CAPSULE">Capsule</option>
+                <option value="SYRUP">Oral Suspension / Syrup</option>
+                <option value="INJECTION">Injection / Vial</option>
+                <option value="OINTMENT">Topical Ointment</option>
+                <option value="DROPS">Ophthalmic / Ear Drops</option>
+                <option value="INHALER">Inhaler</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Stock Unit *</label>
+              <input type="text" id="med-unit" class="form-control" placeholder="tablet, strip, bottle, vial" value="tablet" required>
+            </div>
+            <div class="form-group">
+              <label>Reorder Alert Threshold *</label>
+              <input type="number" id="med-reorder" class="form-control" placeholder="e.g. 50" value="50" min="0" required>
+            </div>
+            <div class="form-group">
+              <label>Sale Price (INR) *</label>
+              <input type="number" id="med-price" class="form-control" placeholder="e.g. 2.50" step="0.01" min="0" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-medicine')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-medicine">Save to Catalogue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Receive Supplier Batch -->
+  <div class="modal" id="modal-receive-batch">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3>Receive Supplier Medicine Batch</h3>
+          <p>Record inbound batch with lot number, expiry date, and unit cost</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-receive-batch')">&times;</button>
+      </div>
+      <form id="form-receive-batch" onsubmit="handleReceiveBatch(event)">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Select Target Medicine *</label>
+              <select id="batch-med-select" class="form-control" required>
+                <option value="">-- Choose Formulary Item --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Batch / Lot Number *</label>
+              <input type="text" id="batch-number" class="form-control" placeholder="e.g. BATCH-2026-X01" required>
+            </div>
+            <div class="form-group">
+              <label>Expiry Date *</label>
+              <input type="date" id="batch-expiry" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Quantity Received *</label>
+              <input type="number" id="batch-qty" class="form-control" placeholder="e.g. 500" min="1" required>
+            </div>
+            <div class="form-group">
+              <label>Purchase Price per Unit (INR) *</label>
+              <input type="number" id="batch-cost" class="form-control" placeholder="e.g. 1.20" step="0.01" min="0" required>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Supplier / Distributor Name</label>
+              <input type="text" id="batch-supplier" class="form-control" placeholder="e.g. ApexCare Central Depot / MedPharma Ltd.">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-receive-batch')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-batch">Receive In Stock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Dispensing Station -->
+  <div class="modal" id="modal-dispense-rx">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3>Pharmacy Dispensing Station</h3>
+          <p>Dispense prescribed medicines by earliest expiry date (FEFO rule)</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-dispense-rx')">&times;</button>
+      </div>
+      <form id="form-dispense-rx" onsubmit="handleDispenseRx(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Encounter ID to Find Prescriptions *</label>
+            <div style="display:flex; gap:8px;">
+              <input type="number" id="dispense-encounter-id" class="form-control" placeholder="e.g. 1" min="1" required>
+              <button type="button" class="btn btn-secondary" onclick="lookupPrescriptionItems()">Load Rx Items</button>
+            </div>
+          </div>
+          <div id="rx-items-container" style="margin-top:14px; font-size:13px; color:var(--text-muted);">
+            Enter an encounter ID and click "Load Rx Items" to see prescribed drugs.
+          </div>
+          <hr style="border:0; border-top:1px solid var(--border-subtle); margin:18px 0;">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Prescription Item ID to Dispense *</label>
+              <input type="number" id="dispense-item-id" class="form-control" placeholder="e.g. 10" min="1" required>
+            </div>
+            <div class="form-group">
+              <label>Quantity to Dispense *</label>
+              <input type="number" id="dispense-qty" class="form-control" placeholder="e.g. 10" min="1" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-dispense-rx')">Close</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-dispense">Confirm & Dispense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Stock Adjustment -->
+  <div class="modal" id="modal-stock-adjust">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3>Record Inventory Stock Adjustment</h3>
+          <p>Correct inventory count for damaged, lost, or audited stock</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-stock-adjust')">&times;</button>
+      </div>
+      <form id="form-stock-adjust" onsubmit="handleStockAdjustment(event)">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Batch ID *</label>
+              <input type="number" id="adjust-batch-id" class="form-control" placeholder="e.g. 1" min="1" required>
+            </div>
+            <div class="form-group">
+              <label>Quantity Change (+ or -) *</label>
+              <input type="number" id="adjust-qty" class="form-control" placeholder="e.g. -5 or +10" required>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Audit Adjustment Reason *</label>
+              <input type="text" id="adjust-reason" class="form-control" placeholder="e.g. Damaged packaging during transfer / Physical count discrepancy" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-stock-adjust')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Apply Adjustment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      requireAuth(['ADMIN', 'PHARMACIST', 'DOCTOR']);
+      syncHospitalInterface();
+      initPharmacy();
+    });
+  </script>
+</body>
+</html>

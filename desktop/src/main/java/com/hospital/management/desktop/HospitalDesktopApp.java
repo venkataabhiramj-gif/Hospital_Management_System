@@ -234,7 +234,21 @@ public class HospitalDesktopApp extends Application {
         if (hasRole("ADMIN")) {
             TextField patientId=new TextField();patientId.setPromptText("Patient record ID for demographic history");Button history=new Button("View demographic corrections");history.setOnAction(e->run(()->load("/api/patients/"+Long.parseLong(patientId.getText().trim())+"/demographic-history","Demographic correction history")));
             Button duplicateHistory=new Button("View possible duplicate reviews");duplicateHistory.setOnAction(e->run(()->load("/api/patients/"+Long.parseLong(patientId.getText().trim())+"/duplicate-review","Possible duplicate review history")));
-            VBox reviewHistory=section("Record review history","Review demographic corrections and duplicate identity decisions.");reviewHistory.getChildren().addAll(formGrid(labelled("Patient record ID",patientId)),new HBox(10,history,duplicateHistory));page.getChildren().add(reviewHistory);
+            VBox reviewHistory=section("Record review history","Review demographic corrections and duplicate identity decisions.");reviewHistory.getChildren().addAll(formGrid(labelled("Patient record ID",patientId)),new HBox(10,history,duplicateHistory));
+            TextField archiveTarget=new TextField();archiveTarget.setPromptText("Patient MRN or record ID to archive");
+            Button archiveBtn=new Button("Archive patient record");
+            archiveBtn.setOnAction(e->{
+                String idVal=archiveTarget.getText().trim();
+                if(idVal.isBlank()) return;
+                Alert confirm=new Alert(Alert.AlertType.CONFIRMATION,"Deactivate and archive patient "+idVal+"? The record will be kept for legal audit.",ButtonType.CANCEL,ButtonType.OK);
+                confirm.setHeaderText("Confirm patient archival");
+                if(confirm.showAndWait().orElse(ButtonType.CANCEL)==ButtonType.OK){
+                    run(()->show(api.delete("/api/patients?id="+java.net.URLEncoder.encode(idVal,java.nio.charset.StandardCharsets.UTF_8)),"Patient record archived.",()->archiveTarget.clear()));
+                }
+            });
+            VBox archiveCard=section("Archive patient record","ADMINISTRATOR ONLY: Soft delete and archive a patient from active clinical views.");
+            archiveCard.getChildren().addAll(formGrid(labelled("Patient MRN or ID",archiveTarget)),archiveBtn);
+            page.getChildren().addAll(reviewHistory,archiveCard);
         }
         return page;
     }
@@ -267,7 +281,18 @@ public class HospitalDesktopApp extends Application {
         TextField prescriptionEncounter=new TextField();prescriptionEncounter.setPromptText("Encounter ID to find its prescription");Button findRx=new Button("Show prescription items");findRx.setOnAction(e->load("/api/encounters/"+Long.parseLong(prescriptionEncounter.getText())+"/prescriptions","Prescription items"));
         TextField prescriptionItem=new TextField();prescriptionItem.setPromptText("Prescription item ID");TextField dispenseQty=new TextField();dispenseQty.setPromptText("Quantity to dispense");Button dispense=new Button("Dispense by earliest expiry");dispense.setOnAction(e->run(()->show(api.post("/api/prescription-items/"+Long.parseLong(prescriptionItem.getText())+"/dispense",java.util.Map.of("quantity",Integer.parseInt(dispenseQty.getText()))))));
         Button substitutionHistory=new Button("Review substitution approval history");substitutionHistory.setOnAction(e->run(()->load("/api/prescription-items/"+Long.parseLong(prescriptionItem.getText())+"/substitution-history","Prescription substitution history")));
-        VBox catalogue=section("Medicine catalogue","Use generic names and define the reorder level for each stock unit.");catalogue.getChildren().addAll(formGrid(labelled("Medicine code",code),labelled("Generic name",name),labelled("Strength",strength),labelled("Stock unit",unit),labelled("Sale price \u00B7 INR",price),labelled("Reorder alert quantity",reorder)),new HBox(10,add,refresh,alerts,movements));
+        TextField archiveMedId=new TextField();archiveMedId.setPromptText("Medicine ID or code to archive");
+        Button archiveMedBtn=new Button("Archive medicine");
+        archiveMedBtn.setOnAction(e->{
+            String medVal=archiveMedId.getText().trim();
+            if(medVal.isBlank()) return;
+            Alert confirm=new Alert(Alert.AlertType.CONFIRMATION,"Archive medicine "+medVal+" from the active catalogue?",ButtonType.CANCEL,ButtonType.OK);
+            confirm.setHeaderText("Confirm medicine deactivation");
+            if(confirm.showAndWait().orElse(ButtonType.CANCEL)==ButtonType.OK){
+                run(()->show(api.delete("/api/inventory/medicines?code="+java.net.URLEncoder.encode(medVal,java.nio.charset.StandardCharsets.UTF_8)),"Medicine deactivated from catalogue.",()->archiveMedId.clear()));
+            }
+        });
+        VBox catalogue=section("Medicine catalogue","Use generic names and define the reorder level for each stock unit.");catalogue.getChildren().addAll(formGrid(labelled("Medicine code",code),labelled("Generic name",name),labelled("Strength",strength),labelled("Stock unit",unit),labelled("Sale price \u00B7 INR",price),labelled("Reorder alert quantity",reorder)),new HBox(10,add,refresh,alerts,movements),formGrid(labelled("Archive medicine ID/code",archiveMedId)),archiveMedBtn);
         VBox receiving=section("Receive a supplier batch","Stock is tracked by batch and expiry date.");receiving.getChildren().addAll(formGrid(labelled("Medicine ID",medicineId),labelled("Batch number",batch),labelled("Expiry date \u00B7 YYYY-MM-DD",expiry),labelled("Quantity received",quantity),labelled("Purchase price per unit \u00B7 INR",purchase)),receive);
         VBox returns=section("Supplier returns","Returned stock is removed from available clinic inventory.");returns.getChildren().addAll(formGrid(labelled("Batch ID",returnBatch),labelled("Quantity to return",returnQuantity),labelled("Reason",returnReason)),returnStock,new Label("Patient-returned medicines must never be restocked."));
         VBox dispensing=section("Prescriptions and dispensing","Dispense only after the doctor finalizes the visit, and finish before billing.");dispensing.getChildren().addAll(formGrid(labelled("Encounter ID",prescriptionEncounter),labelled("Prescription item ID",prescriptionItem),labelled("Quantity to dispense",dispenseQty)),new HBox(10,findRx,dispense,substitutionHistory));

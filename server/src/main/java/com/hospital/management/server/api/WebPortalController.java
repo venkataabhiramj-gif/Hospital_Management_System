@@ -89,6 +89,12 @@ public class WebPortalController {
         return Map.of("message", "Patient record archived successfully", "id", id);
     }
 
+    @DeleteMapping("/patients/{id}")
+    @Transactional
+    public Map<String, Object> deletePatientPath(@PathVariable String id) {
+        return deletePatient(id);
+    }
+
     @DeleteMapping("/appointments")
     @Transactional
     public Map<String, Object> cancelAppointmentAdmin(@RequestParam long id) {
@@ -101,6 +107,12 @@ public class WebPortalController {
         db.update("INSERT INTO appointment_status_history (appointment_id, previous_status, new_status, reason, changed_by) VALUES (?, ?, 'CANCELLED', 'Cancelled via administrative management console', ?)",
                 id, currentStatus, staff);
         return Map.of("success", true, "message", "Appointment cancelled successfully", "id", id);
+    }
+
+    @DeleteMapping("/appointments/{id}")
+    @Transactional
+    public Map<String, Object> cancelAppointmentAdminPath(@PathVariable long id) {
+        return cancelAppointmentAdmin(id);
     }
 
     @GetMapping("/automation/status")

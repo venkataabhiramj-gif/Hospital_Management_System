@@ -43,6 +43,7 @@ final class ApiClient {
     CompletableFuture<String> post(String path, Object body) { return sendJson("POST",path,body); }
     CompletableFuture<String> sendPatch(String path, Object body) { return sendJson("PATCH",path,body); }
     CompletableFuture<String> put(String path, Object body) { return sendJson("PUT",path,body); }
+    CompletableFuture<String> delete(String path) { return send("DELETE", path, null); }
 
     private CompletableFuture<String> sendJson(String method,String path,Object body) {
         try { return send(method,path,json.writeValueAsString(body)); }

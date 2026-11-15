@@ -1,4 +1,4 @@
-/ ApexCare Memorial Hospital  -  ClinicDesk Outpatient System Controller
+// ApexCare Memorial Hospital  -  ClinicDesk Outpatient System Controller
 const API_BASE = '/api';
 
 // ========================================================
@@ -38,13 +38,26 @@ function requireAuth(allowedProfile) {
     window.location.replace('/login.html');
     return null;
   }
-  if (allowedProfile && user.profileType !== allowedProfile && user.role !== 'ADMIN') {
-    if (user.profileType === 'PATIENT') {
-      window.location.replace('/patient-portal.html');
-    } else {
-      window.location.replace('/index.html');
+  // Admin always has master access
+  if (user.role === 'ADMIN') {
+    return user;
+  }
+  if (allowedProfile) {
+    const list = Array.isArray(allowedProfile) ? allowedProfile : [allowedProfile];
+    const userRole = (user.role || '').toUpperCase();
+    const userProfile = (user.profileType || '').toUpperCase();
+    const hasAccess = list.some(item => {
+      const target = item.toUpperCase();
+      return target === userRole || target === userProfile;
+    });
+    if (!hasAccess) {
+      if (user.profileType === 'PATIENT') {
+        window.location.replace('/patient-portal.html');
+      } else {
+        window.location.replace('/index.html');
+      }
+      return null;
     }
-    return null;
   }
   return user;
 }
@@ -119,23 +132,47 @@ function syncHospitalInterface() {
       `;
     } else {
       const currentPath = window.location.pathname;
-      bottomNav.innerHTML = `
-        <a href="/index.html" class="${currentPath.endsWith('/index.html') || currentPath === '/' ? 'active' : ''}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-          <span>Overview</span>
+      const role = (user.role || '').toUpperCase();
+      const mobileNavItems = (role === 'ADMIN'
+        ? [
+            { href: '/index.html', label: 'Overview', active: currentPath.endsWith('/index.html') || currentPath === '/' || currentPath === '', icon: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>' },
+            { href: '/patients.html', label: 'Patients', active: currentPath.includes('patients.html'), icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle>' },
+            { href: '/appointments.html', label: 'Visits', active: currentPath.includes('appointments.html'), icon: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line>' },
+            { href: '/pharmacy.html', label: 'Pharmacy', active: currentPath.includes('pharmacy.html'), icon: '<path d="M10.5 20.5l10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path>' }
+          ]
+        : role === 'PHARMACIST'
+        ? [
+            { href: '/index.html', label: 'Overview', active: currentPath.endsWith('/index.html') || currentPath === '/' || currentPath === '', icon: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>' },
+            { href: '/pharmacy.html', label: 'Pharmacy', active: currentPath.includes('pharmacy.html'), icon: '<path d="M10.5 20.5l10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path>' },
+            { href: '/records.html', label: 'Prescriptions', active: currentPath.includes('records.html'), icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line>' }
+          ]
+        : role === 'DOCTOR'
+        ? [
+            { href: '/index.html', label: 'OPD Queue', active: currentPath.endsWith('/index.html') || currentPath === '/' || currentPath === '', icon: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>' },
+            { href: '/appointments.html', label: 'Visits', active: currentPath.includes('appointments.html'), icon: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line>' },
+            { href: '/records.html', label: 'Records', active: currentPath.includes('records.html'), icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line>' },
+            { href: '/patients.html', label: 'Patients', active: currentPath.includes('patients.html'), icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle>' }
+          ]
+        : role === 'BILLING'
+        ? [
+            { href: '/index.html', label: 'Overview', active: currentPath.endsWith('/index.html') || currentPath === '/' || currentPath === '', icon: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>' },
+            { href: '/billing.html', label: 'Billing', active: currentPath.includes('billing.html'), icon: '<rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line>' },
+            { href: '/patients.html', label: 'Patients', active: currentPath.includes('patients.html'), icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle>' }
+          ]
+        : [
+            { href: '/index.html', label: 'Overview', active: currentPath.endsWith('/index.html') || currentPath === '/' || currentPath === '', icon: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>' },
+            { href: '/patients.html', label: 'Patients', active: currentPath.includes('patients.html'), icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle>' },
+            { href: '/appointments.html', label: 'Visits', active: currentPath.includes('appointments.html'), icon: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line>' },
+            { href: '/billing.html', label: 'Billing', active: currentPath.includes('billing.html'), icon: '<rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line>' }
+          ]
+      );
+
+      bottomNav.innerHTML = mobileNavItems.map(m => `
+        <a href="${m.href}" class="${m.active ? 'active' : ''}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">${m.icon}</svg>
+          <span>${m.label}</span>
         </a>
-        <a href="/patients.html" class="${currentPath.endsWith('/patients.html') ? 'active' : ''}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
-          <span>Patients</span>
-        </a>
-        <a href="/appointments.html" class="${currentPath.endsWith('/appointments.html') ? 'active' : ''}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
-          <span>Visits</span>
-        </a>
-        <a href="/billing.html" class="${currentPath.endsWith('/billing.html') ? 'active' : ''}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-          <span>Billing</span>
-        </a>
+      `).join('') + `
         <button type="button" onclick="toggleMobileSidebar()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
           <span>Menu</span>
@@ -148,7 +185,6 @@ function syncHospitalInterface() {
   // 1. Update Topbar
   const topbarRight = document.querySelector('.top-bar-right');
   if (topbarRight) {
-    // Check if user pill already exists
     let pill = document.getElementById('active-user-pill');
     if (!pill) {
       pill = document.createElement('div');
@@ -162,13 +198,12 @@ function syncHospitalInterface() {
     pill.innerHTML = `
       <div class="user-avatar">${initials}</div>
       <div>
-        <div class="user-meta-name">${user.displayName}</div>
-        <div style="font-size: 10px; color: var(--text-dim);">${user.specialty || user.patientNumber || 'Facility 01'}</div>
+        <div class="user-meta-name">${escapeHtml(user.displayName)}</div>
+        <div style="font-size: 10px; color: var(--text-dim);">${escapeHtml(user.specialty || user.patientNumber || 'Facility 01')}</div>
       </div>
       <span class="user-meta-role">${roleLabel}</span>
     `;
 
-    // Ensure sign out button exists
     let signoutBtn = document.getElementById('btn-global-signout');
     if (!signoutBtn) {
       signoutBtn = document.createElement('button');
@@ -221,8 +256,79 @@ function syncHospitalInterface() {
           </a>
         </li>
       `;
+    } else {
+      const role = (user.role || '').toUpperCase();
+      const allNavItems = [
+        {
+          id: 'dashboard',
+          href: '/index.html',
+          active: currentPath.endsWith('/index.html') || currentPath === '/' || currentPath === '',
+          label: role === 'DOCTOR' ? 'Doctor OPD Desk' : 'Operations Dashboard',
+          icon: '<rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect>',
+          roles: ['ADMIN', 'DOCTOR', 'RECEPTIONIST', 'PHARMACIST', 'BILLING']
+        },
+        {
+          id: 'patients',
+          href: '/patients.html',
+          active: currentPath.includes('patients.html'),
+          label: 'Master Patient Index',
+          icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>',
+          roles: ['ADMIN', 'RECEPTIONIST', 'DOCTOR', 'BILLING']
+        },
+        {
+          id: 'doctors',
+          href: '/doctors.html',
+          active: currentPath.includes('doctors.html'),
+          label: 'Clinician Directory',
+          icon: '<path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"></path><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"></path><circle cx="20" cy="10" r="2"></circle>',
+          roles: ['ADMIN', 'RECEPTIONIST']
+        },
+        {
+          id: 'appointments',
+          href: '/appointments.html',
+          active: currentPath.includes('appointments.html'),
+          label: 'Encounters & Booking',
+          icon: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>',
+          roles: ['ADMIN', 'RECEPTIONIST', 'DOCTOR']
+        },
+        {
+          id: 'pharmacy',
+          href: '/pharmacy.html',
+          active: currentPath.includes('pharmacy.html'),
+          label: 'Pharmacy & Stock',
+          icon: '<path d="M10.5 20.5l10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path>',
+          roles: ['ADMIN', 'PHARMACIST', 'DOCTOR']
+        },
+        {
+          id: 'billing',
+          href: '/billing.html',
+          active: currentPath.includes('billing.html'),
+          label: 'RCM & Invoicing',
+          icon: '<rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line>',
+          roles: ['ADMIN', 'BILLING', 'RECEPTIONIST']
+        },
+        {
+          id: 'records',
+          href: '/records.html',
+          active: currentPath.includes('records.html'),
+          label: 'Electronic Health Records',
+          icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line>',
+          roles: ['ADMIN', 'DOCTOR', 'PHARMACIST']
+        }
+      ];
+
+      const visible = allNavItems.filter(it => it.roles.includes(role) || role === 'ADMIN');
+      sidebarNav.innerHTML = visible.map(it => `
+        <li class="nav-item">
+          <a href="${it.href}" class="nav-link ${it.active ? 'active' : ''}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">${it.icon}</svg>
+            <span>${it.label}</span>
+          </a>
+        </li>
+      `).join('');
     }
   }
+}
 }
 
 // Helper: Generic API client
@@ -291,8 +397,12 @@ function closeModal(id) {
 
 // System notification toast
 function showAlert(message, type = 'success') {
-  const alertBox = document.getElementById('global-alert');
-  if (!alertBox) return;
+  let alertBox = document.getElementById('global-alert') || document.getElementById('alert-container');
+  if (!alertBox) {
+    alertBox = document.createElement('div');
+    alertBox.id = 'global-alert';
+    document.body.appendChild(alertBox);
+  }
   alertBox.className = `alert alert-${type} active`;
   alertBox.innerHTML = `
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -300,7 +410,7 @@ function showAlert(message, type = 'success') {
         ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>'
         : '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>'}
     </svg>
-    <span>${message}</span>
+    <span>${escapeHtml(message)}</span>
   `;
   setTimeout(() => {
     alertBox.classList.remove('active');
@@ -581,27 +691,34 @@ function renderPatientsTable(list) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 32px; color: var(--text-dim);">No active patient records found.</td></tr>';
     return;
   }
+  const user = getAuthUser();
+  const isAdmin = user && user.role === 'ADMIN';
+
   tbody.innerHTML = list.map(p => `
     <tr>
-      <td><span class="mrn-badge">${p.id}</span></td>
+      <td><span class="mrn-badge">${escapeHtml(p.id)}</span></td>
       <td>
         <div style="display:flex; align-items:center; gap:10px;">
           <div class="user-avatar" style="width:28px; height:28px; font-size:11px;">${getInitials(p.name)}</div>
           <div>
             <strong style="color:var(--brand-navy);">${escapeHtml(p.name)}</strong>
-            <div style="font-size:11px; color:var(--text-dim);">${p.age || '32'} Yrs Â ·  ${p.gender || 'Unspecified'}</div>
+            <div style="font-size:11px; color:var(--text-dim);">${p.age || '32'} Yrs &middot; ${escapeHtml(p.gender || 'Unspecified')}</div>
           </div>
         </div>
       </td>
-      <td><span class="vital-tag" style="font-size:11.5px; font-weight:700;">${p.bloodGroup || 'O+'}</span></td>
+      <td><span class="vital-tag" style="font-size:11.5px; font-weight:700;">${escapeHtml(p.bloodGroup || 'O+')}</span></td>
       <td><span style="font-family: var(--font-mono);">${escapeHtml(p.phone || p.contact || "+91 98450 00000")}</span></td>
-      <td style="color:var(--text-muted); font-size:12px;">${p.email || (p.name ? p.name.toLowerCase().replace(/\s+/g, '.') + '@apexcare.org' : 'patient@apexcare.org')}</td>
+      <td style="color:var(--text-muted); font-size:12px;">${escapeHtml(p.email || (p.name ? p.name.toLowerCase().replace(/\s+/g, '.') + '@apexcare.org' : 'patient@apexcare.org'))}</td>
       <td style="color:var(--text-muted); font-size:12px; max-width:180px;">${escapeHtml(p.address || "Central Outpatient District")}</td>
       <td style="font-size:12px; color:var(--text-dim);">${p.registeredDate || '2026-11-10'}</td>
       <td>
-        <button class="btn btn-danger btn-sm" onclick="archivePatient('${p.id}')">
-          Archive
-        </button>
+        ${isAdmin ? `
+          <button class="btn btn-danger btn-sm" onclick="archivePatient('${escapeHtml(p.id)}')">
+            Archive
+          </button>
+        ` : `
+          <span style="font-size:11px; color:var(--text-dim);">Active</span>
+        `}
       </td>
     </tr>
   `).join('');
@@ -1335,3 +1452,324 @@ function autoComputeDOB(ageVal) {
   hint.textContent = `Est. Birth Date: ${year}-01-01 (${year})`;
 }
 window.autoComputeDOB = autoComputeDOB;
+
+// ========================================================
+// 7. PHARMACY & INVENTORY MODULE
+// ========================================================
+async function initPharmacy() {
+  syncHospitalInterface();
+  const tbody = document.getElementById('pharmacy-table-body');
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 32px; color: var(--text-dim);">Loading pharmacy formulary...</td></tr>';
+  }
+  try {
+    const [medicines, alerts] = await Promise.all([
+      apiCall('/inventory/medicines'),
+      apiCall('/inventory/alerts').catch(() => ({ lowStock: [], expiringWithin30Days: [] }))
+    ]);
+
+    window._cachedMedicines = medicines || [];
+    window._cachedAlerts = alerts || { lowStock: [], expiringWithin30Days: [] };
+
+    // Update Quick Stats
+    const totalMedsEl = document.getElementById('stat-total-medicines');
+    if (totalMedsEl) totalMedsEl.textContent = (medicines || []).length;
+
+    const lowStockCount = (alerts.lowStock || []).length;
+    const lowStockEl = document.getElementById('stat-low-stock');
+    if (lowStockEl) lowStockEl.textContent = lowStockCount;
+    const badgeLowStock = document.getElementById('badge-low-stock');
+    if (badgeLowStock) badgeLowStock.textContent = `${lowStockCount} Alerts`;
+
+    const expiringCount = (alerts.expiringWithin30Days || []).length;
+    const expiringEl = document.getElementById('stat-expiring');
+    if (expiringEl) expiringEl.textContent = expiringCount;
+    const badgeExpiring = document.getElementById('badge-expiring');
+    if (badgeExpiring) badgeExpiring.textContent = `${expiringCount} Batches`;
+
+    const totalUnits = (medicines || []).reduce((acc, m) => acc + (Number(m.quantity_on_hand) || 0), 0);
+    const totalUnitsEl = document.getElementById('stat-total-units');
+    if (totalUnitsEl) totalUnitsEl.textContent = totalUnits.toLocaleString('en-IN');
+
+    // Populate Target Medicine Select in Receive Batch Modal
+    const medSelect = document.getElementById('batch-med-select');
+    if (medSelect) {
+      medSelect.innerHTML = '<option value="">-- Choose Formulary Item --</option>' +
+        (medicines || []).map(m => `<option value="${m.id}">${escapeHtml(m.code)} &mdash; ${escapeHtml(m.generic_name)} (${escapeHtml(m.strength || m.unit)})</option>`).join('');
+    }
+
+    renderPharmacyTable(medicines);
+  } catch (err) {
+    showAlert('Error loading pharmacy: ' + err.message, 'error');
+  }
+}
+window.initPharmacy = initPharmacy;
+
+function renderPharmacyTable(list) {
+  const tbody = document.getElementById('pharmacy-table-body');
+  if (!tbody) return;
+  if (!list || list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 32px; color: var(--text-dim);">No medicines matching criteria found.</td></tr>';
+    return;
+  }
+
+  const user = getAuthUser();
+  const canArchive = user && (user.role === 'ADMIN' || user.role === 'PHARMACIST');
+
+  tbody.innerHTML = list.map(m => {
+    const qty = Number(m.quantity_on_hand) || 0;
+    const reorder = Number(m.reorder_level) || 0;
+    let statusBadge = '<span class="badge badge-success" style="background:#ecfdf5; color:#047857; font-weight:600; padding:3px 8px; border-radius:12px; font-size:11px;">In Stock</span>';
+    if (qty <= 0) {
+      statusBadge = '<span class="badge badge-danger" style="background:#fef2f2; color:#b91c1c; font-weight:600; padding:3px 8px; border-radius:12px; font-size:11px;">Out of Stock</span>';
+    } else if (qty <= reorder) {
+      statusBadge = `<span class="badge badge-warning" style="background:#fffbeb; color:#b45309; font-weight:600; padding:3px 8px; border-radius:12px; font-size:11px;">Low Stock (${qty}/${reorder})</span>`;
+    }
+
+    return `
+      <tr>
+        <td><span class="mrn-badge" style="font-family:var(--font-mono);">${escapeHtml(m.code)}</span></td>
+        <td>
+          <div>
+            <strong style="color:var(--brand-navy);">${escapeHtml(m.generic_name)}</strong>
+            <div style="font-size:11px; color:var(--text-dim);">${escapeHtml(m.brand_name || 'Generic')}</div>
+          </div>
+        </td>
+        <td><span style="font-size:12px;">${escapeHtml(m.strength || 'Standard')} &middot; ${escapeHtml(m.dosage_form || 'TABLET')}</span></td>
+        <td><span style="font-size:12px; color:var(--text-muted);">${escapeHtml(m.unit || 'unit')}</span></td>
+        <td><span style="font-weight:600; font-family:var(--font-mono);">${formatINR(m.sale_price)}</span></td>
+        <td><strong style="color:${qty <= reorder ? '#dc2626' : 'var(--brand-navy)'};">${qty}</strong></td>
+        <td>${statusBadge}</td>
+        <td>
+          ${canArchive ? `
+            <button class="btn btn-sm btn-danger" onclick="archiveMedicine(${m.id})">
+              Archive
+            </button>
+          ` : `
+            <span style="font-size:11px; color:var(--text-dim);">Active</span>
+          `}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterPharmacyTable() {
+  const input = document.getElementById('pharmacy-search');
+  if (!input) return;
+  const q = input.value.toLowerCase().trim();
+  const list = window._cachedMedicines || [];
+  if (!q) {
+    renderPharmacyTable(list);
+    return;
+  }
+  const filtered = list.filter(m =>
+    (m.code && m.code.toLowerCase().includes(q)) ||
+    (m.generic_name && m.generic_name.toLowerCase().includes(q)) ||
+    (m.brand_name && m.brand_name.toLowerCase().includes(q)) ||
+    (m.dosage_form && m.dosage_form.toLowerCase().includes(q)) ||
+    (m.strength && m.strength.toLowerCase().includes(q))
+  );
+  renderPharmacyTable(filtered);
+}
+window.filterPharmacyTable = filterPharmacyTable;
+
+async function handleAddMedicine(event) {
+  event.preventDefault();
+  const code = (document.getElementById('med-code')?.value || '').trim();
+  const name = (document.getElementById('med-name')?.value || '').trim();
+  const brand = (document.getElementById('med-brand')?.value || '').trim();
+  const strength = (document.getElementById('med-strength')?.value || '').trim();
+  const form = document.getElementById('med-form')?.value || 'TABLET';
+  const unit = (document.getElementById('med-unit')?.value || 'tablet').trim();
+  const reorder = parseInt(document.getElementById('med-reorder')?.value || '50', 10);
+  const price = parseFloat(document.getElementById('med-price')?.value || '0');
+
+  if (!code || !name) {
+    showAlert('Medicine code and generic name are required', 'error');
+    return;
+  }
+
+  const payload = {
+    code: code,
+    genericName: name,
+    brandName: brand || null,
+    strength: strength || null,
+    dosageForm: form,
+    unit: unit,
+    reorderLevel: isNaN(reorder) ? 50 : reorder,
+    salePrice: isNaN(price) ? 0.00 : price
+  };
+
+  try {
+    await apiCall('/inventory/medicines', 'POST', payload);
+    showAlert('Medicine added to formulary successfully', 'success');
+    closeModal('modal-add-medicine');
+    document.getElementById('form-add-medicine')?.reset();
+    await initPharmacy();
+  } catch (err) {
+    showAlert('Error adding medicine: ' + err.message, 'error');
+  }
+}
+window.handleAddMedicine = handleAddMedicine;
+
+async function handleReceiveBatch(event) {
+  event.preventDefault();
+  const medId = document.getElementById('batch-med-select')?.value;
+  const batchNum = (document.getElementById('batch-number')?.value || '').trim();
+  const expiry = document.getElementById('batch-expiry')?.value;
+  const qty = parseInt(document.getElementById('batch-qty')?.value || '0', 10);
+  const cost = parseFloat(document.getElementById('batch-cost')?.value || '0');
+  const supplier = (document.getElementById('batch-supplier')?.value || '').trim();
+
+  if (!medId || !batchNum || !expiry || qty <= 0) {
+    showAlert('Please fill all required batch fields with valid values', 'error');
+    return;
+  }
+
+  const payload = {
+    medicineId: parseInt(medId, 10),
+    batchNumber: batchNum,
+    expiryDate: expiry,
+    quantity: qty,
+    purchasePrice: isNaN(cost) ? 0.00 : cost,
+    supplier: supplier || null
+  };
+
+  try {
+    await apiCall('/inventory/receipts', 'POST', payload);
+    showAlert(`Batch ${batchNum} received into inventory successfully`, 'success');
+    closeModal('modal-receive-batch');
+    document.getElementById('form-receive-batch')?.reset();
+    await initPharmacy();
+  } catch (err) {
+    showAlert('Error receiving batch: ' + err.message, 'error');
+  }
+}
+window.handleReceiveBatch = handleReceiveBatch;
+
+async function handleStockAdjustment(event) {
+  event.preventDefault();
+  const batchId = parseInt(document.getElementById('adjust-batch-id')?.value || '0', 10);
+  const qtyChange = parseInt(document.getElementById('adjust-qty')?.value || '0', 10);
+  const reason = (document.getElementById('adjust-reason')?.value || '').trim();
+
+  if (!batchId || isNaN(qtyChange) || qtyChange === 0 || !reason) {
+    showAlert('Batch ID, non-zero quantity change, and audit reason are required', 'error');
+    return;
+  }
+
+  const payload = {
+    batchId: batchId,
+    quantityChange: qtyChange,
+    reason: reason
+  };
+
+  try {
+    await apiCall('/inventory/adjustments', 'POST', payload);
+    showAlert('Stock count adjusted and audited successfully', 'success');
+    closeModal('modal-stock-adjust');
+    document.getElementById('form-stock-adjust')?.reset();
+    await initPharmacy();
+  } catch (err) {
+    showAlert('Error adjusting stock: ' + err.message, 'error');
+  }
+}
+window.handleStockAdjustment = handleStockAdjustment;
+
+async function lookupPrescriptionItems() {
+  const encInput = document.getElementById('dispense-encounter-id');
+  const container = document.getElementById('rx-items-container');
+  if (!encInput || !container) return;
+  const encId = parseInt(encInput.value, 10);
+  if (!encId || isNaN(encId)) {
+    showAlert('Please enter a valid encounter ID', 'error');
+    return;
+  }
+  container.innerHTML = '<div style="color:var(--text-dim); padding:8px 0;">Looking up prescribed items for visit #' + encId + '...</div>';
+
+  try {
+    const items = await apiCall(`/encounters/${encId}/prescriptions`);
+    if (!items || items.length === 0) {
+      container.innerHTML = '<div style="color:#b45309; background:#fffbeb; padding:10px; border-radius:6px; font-size:12px;">No prescription items found for visit #' + encId + '. Verify the encounter is finalized.</div>';
+      return;
+    }
+
+    container.innerHTML = `
+      <div style="font-weight:600; margin-bottom:8px; color:var(--brand-navy);">Prescribed Medicines for Encounter #${encId}:</div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        ${items.map(it => {
+          const prescribed = Number(it.quantity_prescribed) || 0;
+          const dispensed = Number(it.quantity_dispensed) || 0;
+          const remaining = Math.max(0, prescribed - dispensed);
+          return `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-card); padding:8px 12px; border:1px solid var(--border-subtle); border-radius:6px;">
+              <div>
+                <strong>${escapeHtml(it.generic_name)}</strong> <span style="font-size:11px; color:var(--text-dim);">(${escapeHtml(it.dosage || '')} - ${escapeHtml(it.frequency || '')})</span>
+                <div style="font-size:11px; color:var(--text-muted);">Item ID: ${it.item_id} | Prescribed: ${prescribed} | Dispensed: ${dispensed} | Remaining: <strong>${remaining}</strong></div>
+              </div>
+              <div>
+                ${remaining > 0 ? `
+                  <button type="button" class="btn btn-sm btn-primary" onclick="selectItemForDispense(${it.item_id}, ${remaining})">
+                    Select (${remaining})
+                  </button>
+                ` : `
+                  <span style="font-size:11px; color:#047857; font-weight:600;">Fulfilled</span>
+                `}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  } catch (err) {
+    container.innerHTML = `<div style="color:#dc2626; font-size:12px;">Failed to load prescription items: ${escapeHtml(err.message)}</div>`;
+  }
+}
+window.lookupPrescriptionItems = lookupPrescriptionItems;
+
+function selectItemForDispense(itemId, remainingQty) {
+  const itemInput = document.getElementById('dispense-item-id');
+  const qtyInput = document.getElementById('dispense-qty');
+  if (itemInput) itemInput.value = itemId;
+  if (qtyInput) qtyInput.value = remainingQty;
+}
+window.selectItemForDispense = selectItemForDispense;
+
+async function handleDispenseRx(event) {
+  event.preventDefault();
+  const itemId = parseInt(document.getElementById('dispense-item-id')?.value || '0', 10);
+  const qty = parseInt(document.getElementById('dispense-qty')?.value || '0', 10);
+
+  if (!itemId || isNaN(qty) || qty <= 0) {
+    showAlert('Valid prescription item ID and positive quantity required', 'error');
+    return;
+  }
+
+  try {
+    await apiCall(`/prescription-items/${itemId}/dispense`, 'POST', { quantity: qty });
+    showAlert(`Successfully dispensed ${qty} unit(s) via FEFO stock rule`, 'success');
+    closeModal('modal-dispense-rx');
+    document.getElementById('form-dispense-rx')?.reset();
+    const rxContainer = document.getElementById('rx-items-container');
+    if (rxContainer) rxContainer.innerHTML = 'Enter an encounter ID and click "Load Rx Items" to see prescribed drugs.';
+    await initPharmacy();
+  } catch (err) {
+    showAlert('Dispensing error: ' + err.message, 'error');
+  }
+}
+window.handleDispenseRx = handleDispenseRx;
+
+async function archiveMedicine(id) {
+  if (!confirm(`Are you sure you want to deactivate/archive medicine #${id} from the active formulary?`)) {
+    return;
+  }
+  try {
+    const res = await apiCall(`/inventory/medicines/${id}`, 'DELETE');
+    showAlert(res.message || 'Medicine archived successfully', 'success');
+    await initPharmacy();
+  } catch (err) {
+    showAlert('Archival failed: ' + err.message, 'error');
+  }
+}
+window.archiveMedicine = archiveMedicine;

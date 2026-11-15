@@ -661,6 +661,46 @@ You might notice a file called **`.env.example`** on GitHub. This is an industry
 2. **Use Environment Variables**: Cloud platforms (Docker, Render, AWS, Heroku) allow you to enter environment variables into their private dashboard settings, injecting them directly into the application process at runtime without writing them to disk.
 3. **If a secret is ever accidentally committed**: Immediately change/rotate the password in the database and run `git filter-repo` to erase the commit from history.
 
+---
+
+## 8.3. Full Feature Parity & Complete Add/Delete Lifecycle Across Web, Desktop, and Mobile
+
+A major milestone of our production hardening was achieving **strict feature parity** and **complete CRUD lifecycles** across all three platforms (Web Portal, JavaFX Desktop, and Native Android):
+
+### 1. The Core Architecture Challenge:
+In many legacy systems, features exist on the web that aren't on mobile, or desktop has capabilities the web lacks. In a hospital:
+- A receptionist at the desktop counter needs to register new patients (`POST /api/patients`), correct typos (`PUT /api/patients/{id}`), or check in appointments.
+- An administrator at any workstation must have the highest authority to deactivate/archive erroneous records (`DELETE /api/patients`, `DELETE /api/inventory/medicines`).
+- A pharmacist running around the dispensary with an Android phone needs to receive incoming supplier drug batches (`POST /api/inventory/receipts`), dispense prescribed drugs via the FEFO algorithm (`POST /api/prescription-items/{id}/dispense`), adjust damaged stock (`POST /api/inventory/adjustments`), or archive obsolete drugs (`DELETE /api/inventory/medicines`).
+
+### 2. The Patient Record Lifecycle:
+| Action | HTTP Endpoint | Web Portal | Desktop App | Android Mobile | Authorized Roles |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| **Search / Directory** | `GET /api/patients?q=...` | ✅ Live Filter | ✅ Search Card | ✅ Search Field | `ADMIN`, `DOCTOR`, `RECEPTIONIST`, `BILLING` |
+| **New Patient Intake** | `POST /api/patients` | ✅ Intake Modal | ✅ Register Card | ✅ Register Form | `ADMIN`, `RECEPTIONIST` |
+| **Demographic Correction**| `PUT /api/patients/{id}` | ✅ Edit Form | ✅ Correction Card| ✅ Correction Form | `ADMIN`, `RECEPTIONIST` |
+| **Demographic Audit Log** | `GET /api/patients/{id}/demographic-history` | ✅ Audit View | ✅ History Dialog | ✅ History List | `ADMIN` Only |
+| **Archive / Soft Delete** | `DELETE /api/patients?id=...` & `/{id}` | ✅ Archive Action | ✅ Archive Card | ✅ Archive Action | **`ADMIN` Only (Master Access)** |
+
+### 3. The Pharmacy & Formulary Lifecycle:
+| Action | HTTP Endpoint | Web Portal | Desktop App | Android Mobile | Authorized Roles |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| **Formulary Directory** | `GET /api/inventory/medicines` | ✅ Live Table | ✅ Stock View | ✅ Availability | `ADMIN`, `PHARMACIST`, `DOCTOR` |
+| **Stock Alerts & Expiry** | `GET /api/inventory/alerts` | ✅ Metric Cards | ✅ Alerts Dialog | ✅ Alerts View | `ADMIN`, `PHARMACIST` |
+| **Add New Medicine** | `POST /api/inventory/medicines` | ✅ Add Modal | ✅ Catalogue Card | ✅ Add Drug Form | `ADMIN`, `PHARMACIST` |
+| **Receive Batch** | `POST /api/inventory/receipts` | ✅ Batch Modal | ✅ Receive Card | ✅ Batch Form | `ADMIN`, `PHARMACIST` |
+| **Stock Adjustment** | `POST /api/inventory/adjustments` | ✅ Adjust Modal | ✅ Movement Form | ✅ Adjust Form | `ADMIN`, `PHARMACIST` |
+| **FEFO Dispensing** | `POST /api/prescription-items/{id}/dispense` | ✅ Dispense Rx | ✅ Dispense Card | ✅ Dispense Action | `ADMIN`, `PHARMACIST` |
+| **Archive / Deactivate** | `DELETE /api/inventory/medicines/{id}` | ✅ Archive Button | ✅ Archive Card | ✅ Archive Action | **`ADMIN` & `PHARMACIST`** |
+
+### 4. Role-Based Access Control (RBAC) Architecture:
+The system strictly enforces the principle of least privilege:
+- **`ADMIN` (System Administrator)**: Holds unconditional master access across all modules. Can view, create, edit, audit, and permanently archive patient records, pharmacy items, staff accounts, doctor schedules, and invoices.
+- **`DOCTOR` (Clinician)**: Restricted to clinical care. Can start consultations, document SOAP notes (subjective complaints, vital signs, physical exam, diagnosis), order laboratory tests, issue prescriptions, and review patient visit histories. Strictly forbidden from modifying pharmacy stock batches, issuing billing refunds, or deleting records.
+- **`RECEPTIONIST` (Front Desk)**: Handles patient intake, scheduling, check-ins, cancellations with documented reasons, and initial fee collection. Cannot view confidential clinical consultation notes or dispense medications.
+- **`PHARMACIST` (Dispensary)**: Manages drug formulary, receives batches with expiry dates, dispenses medications using First-Expired-First-Out (FEFO), reviews substitution history, and archives obsolete drugs. Cannot conduct clinical consultations or access billing refunds.
+- **`BILLING` (Revenue Cycle)**: Manages service catalogues, generates itemized invoices from finalized visits, processes payments (Cash, UPI, Card, NetBanking), and issues audited refunds.
+- **`PATIENT` (Self-Service)**: Accesses only their own health portal using multi-factor identity verification (MRN + Date of Birth). Can view personal visit summaries, prescriptions, invoices, and book upcoming appointments.
 
 ---
 

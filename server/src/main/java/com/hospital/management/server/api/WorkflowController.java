@@ -412,6 +412,29 @@ public class WorkflowController {
         audit.record("MEDICINE_CREATED","MEDICINE",id,"Catalog item"); return db.queryForMap("SELECT * FROM medicines WHERE id=?",id);
     }
 
+    @DeleteMapping("/inventory/medicines/{id}") @Transactional
+    public Map<String,Object> archiveMedicinePath(@PathVariable Long id) {
+        int updated = db.update("UPDATE medicines SET active=FALSE WHERE id=?", id);
+        if (updated == 0) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Medicine record not found");
+        audit.record("MEDICINE_ARCHIVED", "MEDICINE", id, "Deactivated from active pharmacy inventory");
+        return Map.of("message", "Medicine archived successfully", "id", id);
+    }
+
+    @DeleteMapping("/inventory/medicines") @Transactional
+    public Map<String,Object> archiveMedicineParam(@RequestParam(required = false) Long id, @RequestParam(required = false) String code) {
+        int updated = 0;
+        if (id != null) {
+            updated = db.update("UPDATE medicines SET active=FALSE WHERE id=?", id);
+        } else if (code != null && !code.isBlank()) {
+            updated = db.update("UPDATE medicines SET active=FALSE WHERE code=? OR CAST(id AS VARCHAR)=?", code.trim(), code.trim());
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Medicine ID or code required");
+        }
+        if (updated == 0) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Medicine record not found");
+        audit.record("MEDICINE_ARCHIVED", "MEDICINE", id != null ? id : 0L, "Deactivated from active pharmacy inventory");
+        return Map.of("message", "Medicine archived successfully");
+    }
+
     @PostMapping("/inventory/receipts") @ResponseStatus(HttpStatus.CREATED) @Transactional
     Map<String,Object> receiveStock(@Valid @RequestBody BatchInput b) {
         if(b.expiryDate().isBefore(LocalDate.now(java.time.ZoneId.of("Asia/Kolkata")))) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Expiry must be today or later in India");

@@ -42,8 +42,8 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/automation/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/doctors/web").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/patients").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/records").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/patients", "/api/patients/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/records", "/api/records/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/patients/*/demographic-history").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/patients/*/duplicate-review").hasRole("ADMIN")
 
@@ -70,7 +70,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/patients", "/api/patients/**").hasAnyRole("ADMIN", "RECEPTIONIST", "DOCTOR", "BILLING")
 
                         // 7. Appointments & Scheduling (Receptionists, Doctors, Admin)
-                        .requestMatchers(HttpMethod.DELETE, "/api/appointments").hasAnyRole("ADMIN", "RECEPTIONIST")
+                        .requestMatchers(HttpMethod.DELETE, "/api/appointments", "/api/appointments/**").hasAnyRole("ADMIN", "RECEPTIONIST")
                         .requestMatchers("/api/appointments", "/api/appointments/**").hasAnyRole("ADMIN", "RECEPTIONIST", "DOCTOR")
 
                         // 8. Billing & Invoices (Billing staff & Admin)
