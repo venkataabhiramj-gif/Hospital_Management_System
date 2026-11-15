@@ -124,6 +124,33 @@ body {
   letter-spacing: 0.05em;
 }
 
+.sidebar-close-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  margin-left: auto;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.sidebar-close-btn:hover {
+  background: var(--bg-sidebar-hover);
+  color: var(--brand-navy);
+}
+
+@media (max-width: 768px) {
+  .sidebar-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
 .nav-section-label {
   font-size: 10px;
   font-weight: 700;
@@ -443,6 +470,46 @@ body {
   background: #ffffff;
 }
 
+.card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.badge-counter {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 320px;
+  max-width: 100%;
+}
+
+.search-box svg {
+  position: absolute;
+  left: 12px;
+  width: 15px;
+  height: 15px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+.search-box .form-control {
+  padding-left: 36px;
+}
+
 .card-title h3 {
   font-size: 15px;
   font-weight: 700;
@@ -638,7 +705,9 @@ body {
   pointer-events: auto;
 }
 
-.modal-card {
+.modal-card,
+.modal-content,
+.modal-dialog {
   background: #ffffff;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-card);
@@ -650,9 +719,12 @@ body {
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
-.modal-overlay.active .modal-card {
+.modal-overlay.active .modal-card,
+.modal-overlay.active .modal-content,
+.modal-overlay.active .modal-dialog {
   transform: translateY(0) scale(1);
 }
 
@@ -1580,17 +1652,38 @@ body {
     gap: 10px;
   }
   .top-bar-left {
-    gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
   .top-bar-right {
     gap: 8px;
     width: 100%;
-    justify-content: flex-end;
+    justify-content: flex-start;
+    align-items: center;
+    flex-wrap: wrap;
   }
   .content-container {
     padding: 14px;
   }
   .metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .card-header-left {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .search-box {
+    width: 100%;
+  }
+  .form-row {
     grid-template-columns: 1fr;
     gap: 12px;
   }
@@ -1603,12 +1696,15 @@ body {
     border-radius: var(--radius-md);
   }
   .table-responsive table {
-    min-width: 700px;
+    min-width: 680px;
   }
+  .modal-card,
+  .modal-content,
   .modal-dialog {
     width: 95% !important;
     max-width: 95% !important;
-    margin: 16px auto;
+    margin: 12px auto;
+    max-height: 92vh;
   }
   .demo-buttons-row {
     flex-direction: column;

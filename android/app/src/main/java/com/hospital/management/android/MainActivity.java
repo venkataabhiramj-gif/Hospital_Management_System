@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) { super.onCreate(state); getWindow().setStatusBarColor(mist); getWindow().setNavigationBarColor(mist); getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR); showLogin(); }
     private void base(String title) {
-        ScrollView scroll=new ScrollView(this); page=new LinearLayout(this); page.setOrientation(LinearLayout.VERTICAL); page.setPadding(dp(20),dp(18),dp(20),dp(24)); page.setBackgroundColor(mist);
+        ScrollView scroll=new ScrollView(this); scroll.setFillViewport(true); page=new LinearLayout(this); page.setOrientation(LinearLayout.VERTICAL); page.setPadding(dp(20),dp(18),dp(20),dp(24)); page.setBackgroundColor(mist);
         int left=dp(22),top=dp(26),right=dp(22),bottom=dp(20);
         scroll.setOnApplyWindowInsetsListener((view,insets)->{
             int insetLeft,insetTop,insetRight,insetBottom;
@@ -80,17 +80,20 @@ public class MainActivity extends Activity {
         docChip.setOnClickListener(c->{ username.setText("demo.doctor"); password.setText("DemoStaffPass123!"); });
         Button recepChip=chip("Reception");
         recepChip.setOnClickListener(c->{ username.setText("demo.reception"); password.setText("DemoStaffPass123!"); });
+        Button pharmChip=chip("Pharmacy");
+        pharmChip.setOnClickListener(c->{ username.setText("demo.pharmacy"); password.setText("DemoStaffPass123!"); });
         
         demoRow.addView(adminChip);
         demoRow.addView(docChip);
         demoRow.addView(recepChip);
+        demoRow.addView(pharmChip);
         page.addView(demoRow, dp);
 
         label("Enter your server URL (or use Cloudflare HTTPS link) to connect.",12,false);
     }
     private void showHome(String staff) {
         base("Good day, "+staff); label("Your clinic workspace is ready. Choose a task to get started.",14,false);
-        Button patients=button("Patients"); Button appointments=button("Appointments"); Button clinical=button("Consultations");Button pharmacy=button("Pharmacy and stock");Button billing=button("Billing");Button administration=button("Administration");Button password=button("Change password");Button signOut=button("Sign out");
+        Button patients=tileButton("Patients", false); Button appointments=tileButton("Appointments", false); Button clinical=tileButton("Consultations", false);Button pharmacy=tileButton("Pharmacy & Stock", false);Button billing=tileButton("Billing Ledger", false);Button administration=tileButton("Administration", false);Button password=tileButton("Change Password", false);Button signOut=tileButton("Sign Out", true);
         patients.setOnClickListener(v->showPatients()); appointments.setOnClickListener(v->showAppointments());clinical.setOnClickListener(v->showClinical());pharmacy.setOnClickListener(v->showPharmacy());billing.setOnClickListener(v->showBilling());administration.setOnClickListener(v->showAdministration());password.setOnClickListener(v->showPassword());signOut.setOnClickListener(v->{service="";auth="";activeUser="";activeUsername="";activeRole="";showLogin();});
         GridLayout shortcuts=new GridLayout(this);shortcuts.setColumnCount(2);shortcuts.setUseDefaultMargins(false);LinearLayout.LayoutParams gp=new LinearLayout.LayoutParams(-1,-2);gp.topMargin=dp(12);page.addView(shortcuts,gp);
         if(hasRole("ADMIN","RECEPTIONIST","BILLING"))addTile(shortcuts,patients);
@@ -239,13 +242,15 @@ public class MainActivity extends Activity {
     private String formatResponse(String raw){if(raw==null||raw.isBlank())return "Done.";try{org.json.JSONArray rows=new org.json.JSONArray(raw);if(rows.length()==0)return "No matching records.";StringBuilder out=new StringBuilder();for(int i=0;i<rows.length();i++){if(i>0)out.append("\n\n");out.append(i+1).append(". ").append(formatObject(rows.getJSONObject(i)));}return out.toString();}catch(Exception ignored){}try{return formatObject(new JSONObject(raw));}catch(Exception ignored){return raw;}}
     private String formatObject(JSONObject object){StringBuilder out=new StringBuilder();java.util.Iterator<String> keys=object.keys();while(keys.hasNext()){String key=keys.next();Object value=object.opt(key);if(value==null||value==JSONObject.NULL||value.toString().isBlank())continue;if(out.length()>0)out.append("\n");out.append(key.replaceAll("([a-z])([A-Z])","$1 $2").replace('_',' ')).append(": ").append(value);}return out.length()==0?"Done.":out.toString();}
     private String readBody(InputStream input) throws IOException { if(input==null)return "";try(InputStream in=input;ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] buffer=new byte[4096];int count;while((count=in.read(buffer))!=-1)out.write(buffer,0,count);return new String(out.toByteArray(),StandardCharsets.UTF_8);} }
-    private EditText field(String hint,String value){EditText e=new EditText(this);e.setSingleLine(true);e.setHint(hint);e.setText(value);e.setTextSize(15);e.setPadding(dp(14),0,dp(14),0);e.setTextColor(ink);e.setHintTextColor(Color.rgb(130,145,157));e.setBackground(rounded(Color.WHITE,line,8));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(54));lp.bottomMargin=dp(5);page.addView(e,lp);return e;}
-    private EditText multilineField(String hint){EditText e=new EditText(this);e.setSingleLine(false);e.setMinLines(3);e.setMaxLines(8);e.setGravity(android.view.Gravity.TOP);e.setHint(hint);e.setTextColor(ink);e.setHintTextColor(Color.GRAY);page.addView(e,new LinearLayout.LayoutParams(-1,dp(120)));return e;}
-    private Button button(String text){Button b=new Button(this);b.setText(text);b.setAllCaps(false);b.setTextSize(14);b.setTypeface(null,1);b.setTextColor(Color.WHITE);b.setBackground(rounded(teal,teal,9));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(50));lp.topMargin=dp(8);b.setLayoutParams(lp);return b;}
+    private EditText field(String hint,String value){EditText e=new EditText(this);e.setSingleLine(true);e.setHint(hint);e.setText(value);e.setTextSize(15);e.setGravity(android.view.Gravity.CENTER_VERTICAL);e.setPadding(dp(14),0,dp(14),0);e.setTextColor(ink);e.setHintTextColor(Color.rgb(130,145,157));e.setBackground(rounded(Color.WHITE,line,8));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(54));lp.bottomMargin=dp(8);page.addView(e,lp);return e;}
+    private EditText multilineField(String hint){EditText e=new EditText(this);e.setSingleLine(false);e.setMinLines(3);e.setMaxLines(8);e.setGravity(android.view.Gravity.TOP);e.setPadding(dp(14),dp(12),dp(14),dp(12));e.setHint(hint);e.setTextColor(ink);e.setHintTextColor(Color.rgb(130,145,157));e.setBackground(rounded(Color.WHITE,line,8));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(120));lp.bottomMargin=dp(8);page.addView(e,lp);return e;}
+    private Button button(String text){Button b=new Button(this);b.setText(text);b.setAllCaps(false);b.setTextSize(14);b.setTypeface(null,1);b.setTextColor(Color.WHITE);b.setBackground(rounded(teal,teal,9));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(50));lp.topMargin=dp(8);lp.bottomMargin=dp(4);b.setLayoutParams(lp);return b;}
+    private Button secondaryButton(String text){Button b=new Button(this);b.setText(text);b.setAllCaps(false);b.setTextSize(14);b.setTypeface(null,1);b.setTextColor(teal);b.setBackground(rounded(Color.WHITE,line,9));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(48));lp.topMargin=dp(8);lp.bottomMargin=dp(4);b.setLayoutParams(lp);return b;}
+    private Button tileButton(String text, boolean isDanger){Button b=new Button(this);b.setText(text);b.setAllCaps(false);b.setTextSize(14);b.setTypeface(null,1);if(isDanger){b.setTextColor(Color.rgb(185,28,28));b.setBackground(rounded(Color.rgb(254,242,242),Color.rgb(254,205,211),12));}else{b.setTextColor(ink);b.setBackground(rounded(Color.WHITE,line,12));}return b;}
     private Button chip(String text){Button b=new Button(this);b.setText(text);b.setAllCaps(false);b.setTextSize(12);b.setTextColor(teal);b.setBackground(rounded(Color.WHITE,line,20));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(38),1f);lp.setMargins(dp(3),0,dp(3),0);b.setLayoutParams(lp);return b;}
     private LinearLayout card(){LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(18),dp(16),dp(18),dp(16));box.setBackground(rounded(Color.WHITE,line,14));box.setElevation(dp(1));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.bottomMargin=dp(12);box.setLayoutParams(lp);page.addView(box);return box;}
     private GradientDrawable rounded(int fill,int stroke,int radius){GradientDrawable shape=new GradientDrawable();shape.setColor(fill);shape.setCornerRadius(dp(radius));shape.setStroke(dp(1),stroke);return shape;}
-    private void addTile(GridLayout grid,Button item){GridLayout.LayoutParams lp=new GridLayout.LayoutParams();lp.width=0;lp.height=dp(72);lp.columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f);lp.setMargins(dp(4),dp(4),dp(4),dp(4));item.setLayoutParams(lp);grid.addView(item);}
+    private void addTile(GridLayout grid,Button item){GridLayout.LayoutParams lp=new GridLayout.LayoutParams();lp.width=0;lp.height=dp(68);lp.columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f);lp.setMargins(dp(4),dp(4),dp(4),dp(4));item.setLayoutParams(lp);grid.addView(item);}
     private void label(String text,int size,boolean bold){TextView t=new TextView(this);t.setText(text);t.setTextSize(size);t.setTextColor(ink);if(bold)t.setTypeface(null,1);LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.bottomMargin=dp(8);page.addView(t,p);}
     private int dp(int value){return (int)(value*getResources().getDisplayMetrics().density+.5f);}
     @Override protected void onDestroy(){super.onDestroy();worker.shutdownNow();}

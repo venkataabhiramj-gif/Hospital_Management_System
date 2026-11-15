@@ -106,6 +106,19 @@ function syncHospitalInterface() {
     topbarLeft.prepend(toggleBtn);
   }
 
+  // Ensure Mobile Close Button in Sidebar
+  const sidebarBrand = document.querySelector('.sidebar-brand');
+  if (sidebarBrand && !document.getElementById('sidebar-close-btn')) {
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.id = 'sidebar-close-btn';
+    closeBtn.className = 'sidebar-close-btn';
+    closeBtn.setAttribute('aria-label', 'Close menu');
+    closeBtn.onclick = toggleMobileSidebar;
+    closeBtn.innerHTML = '&times;';
+    sidebarBrand.appendChild(closeBtn);
+  }
+
   // Ensure Mobile Bottom Navigation
   if (!document.querySelector('.mobile-bottom-nav')) {
     const bottomNav = document.createElement('nav');
@@ -329,7 +342,6 @@ function syncHospitalInterface() {
     }
   }
 }
-}
 
 // Helper: Generic API client
 // Security helper: sanitize and escape HTML entities to prevent Stored & Reflected XSS
@@ -363,9 +375,11 @@ async function apiCall(endpoint, method = 'GET', data = null) {
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, options);
     if (res.status === 401) {
-      console.warn('[EHR-API] 401 Unauthorized: session expired or credentials required.');
-      logoutUser();
-      throw new Error('Your session has expired. Please sign in again.');
+      if (endpoint !== '/auth/login' && !window.location.pathname.endsWith('/login.html')) {
+        console.warn('[EHR-API] 401 Unauthorized: session expired or credentials required.');
+        logoutUser();
+        throw new Error('Your session has expired. Please sign in again.');
+      }
     }
     const text = await res.text();
     let result = {};
@@ -1773,3 +1787,14 @@ async function archiveMedicine(id) {
   }
 }
 window.archiveMedicine = archiveMedicine;
+
+// Automatically synchronize role interface on DOM ready across all pages
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      syncHospitalInterface();
+    });
+  } else {
+    syncHospitalInterface();
+  }
+}

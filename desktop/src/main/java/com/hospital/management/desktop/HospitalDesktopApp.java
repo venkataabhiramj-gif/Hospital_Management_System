@@ -41,7 +41,7 @@ public class HospitalDesktopApp extends Application {
         stage.show();
     }
 
-    private VBox login(Stage stage) {
+    private StackPane login(Stage stage) {
         TextField host = new TextField("http://localhost:8088"); host.setPromptText("e.g. http://localhost:8088");
         TextField username = new TextField(); username.setPromptText("Staff username (e.g. admin or demo.doctor)");
         PasswordField password = new PasswordField(); password.setPromptText("Account password");
@@ -93,7 +93,7 @@ public class HospitalDesktopApp extends Application {
 
         VBox box = new VBox(12, title, hint, new Label("Server Address"), host, new Label("Staff Username"), username, new Label("Password"), password, connect, message, new Separator(), demoLabel, demoRow);
         box.getStyleClass().add("login-card"); box.setMaxWidth(460);
-        StackPane root = new StackPane(box); root.getStyleClass().add("login-background"); return new VBox(root);
+        StackPane root = new StackPane(box); root.getStyleClass().add("login-background"); return root;
     }
 
     private BorderPane workspace() {
@@ -104,7 +104,7 @@ public class HospitalDesktopApp extends Application {
         Label account = new Label(activeName + "  \u00B7  " + activeRole.replace('_',' ')); account.getStyleClass().add("muted");
         Button changePassword=new Button("Change password");changePassword.setOnAction(e->changePassword());
         Button signOut=new Button("Sign out");signOut.setOnAction(e->{if(dashboardRefresh!=null)dashboardRefresh.stop();api.clearCredentials();activeName="";activeUsername="";activeRole="";primaryStage.getScene().setRoot(login(primaryStage));});
-        HBox header = new HBox(16,brandBox,new Region(),account,changePassword,signOut); HBox.setHgrow(header.getChildren().get(1),Priority.ALWAYS); header.setPadding(new Insets(18,28,18,28)); header.getStyleClass().add("topbar");
+        HBox header = new HBox(16,brandBox,new Region(),account,changePassword,signOut); HBox.setHgrow(header.getChildren().get(1),Priority.ALWAYS); header.setAlignment(javafx.geometry.Pos.CENTER_LEFT); header.setPadding(new Insets(18,28,18,28)); header.getStyleClass().add("topbar");
         navigation = new VBox(7); navigation.setPadding(new Insets(22,14,18,14)); navigation.getStyleClass().add("sidebar"); navigation.setPrefWidth(218);
         Label navTitle = new Label("CLINIC WORKSPACE"); navTitle.getStyleClass().add("nav-caption"); navigation.getChildren().add(navTitle);
         pageArea = new VBox(18); pageArea.setPadding(new Insets(30,34,26,34)); pageArea.getStyleClass().add("page-area");
@@ -168,6 +168,7 @@ public class HospitalDesktopApp extends Application {
         }
         page.getChildren().add(shortcuts);
         GridPane metrics=new GridPane();metrics.setHgap(14);metrics.setVgap(14);metrics.getStyleClass().add("metrics-grid");
+        for(int i=0;i<3;i++){ColumnConstraints cc=new ColumnConstraints();cc.setPercentWidth(33.33);cc.setHgrow(Priority.ALWAYS);metrics.getColumnConstraints().add(cc);}
         Label scheduled=valueLabel("\u2014"),checkedIn=valueLabel("\u2014"),completed=valueLabel("\u2014"),stockAlerts=valueLabel("\u2014"),collections=valueLabel("\u2014");
         metrics.add(metric("Appointments today",scheduled,"Scheduled visits"),0,0);metrics.add(metric("Checked in",checkedIn,"Patients in the clinic"),1,0);metrics.add(metric("Completed visits",completed,"Consultations finished"),2,0);
         if(hasRole("ADMIN","PHARMACIST"))metrics.add(metric("Stock alerts",stockAlerts,"Low stock or near expiry"),0,1);
@@ -177,8 +178,8 @@ public class HospitalDesktopApp extends Application {
         VBox appointmentRows=new VBox(8);appointmentRows.getStyleClass().add("appointment-list");
         Button refresh=new Button("Refresh dashboard");refresh.getStyleClass().add("secondary-button");
         refresh.setOnAction(e->refreshOverview(scheduled,checkedIn,completed,stockAlerts,collections,appointmentRows));
-        page.getChildren().addAll(metrics,new HBox(12,scheduleTitle,new Region(),refresh));HBox titleRow=(HBox)page.getChildren().get(page.getChildren().size()-1);HBox.setHgrow(titleRow.getChildren().get(1),Priority.ALWAYS);
-        page.getChildren().add(appointmentRows);
+        HBox titleRow=new HBox(12,scheduleTitle,new Region(),refresh);titleRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);HBox.setHgrow(titleRow.getChildren().get(1),Priority.ALWAYS);
+        page.getChildren().addAll(metrics,titleRow,appointmentRows);
         refreshOverview(scheduled,checkedIn,completed,stockAlerts,collections,appointmentRows);
         if(dashboardRefresh!=null)dashboardRefresh.stop();
         dashboardRefresh=new Timeline(new KeyFrame(Duration.minutes(1),e->refreshOverview(scheduled,checkedIn,completed,stockAlerts,collections,appointmentRows)));
@@ -196,7 +197,7 @@ public class HospitalDesktopApp extends Application {
             if(error!=null){scheduled.setText("\u2014");appointmentRows.getChildren().setAll(new Label("Appointments are unavailable. Check the clinic connection."));return;}
             try{JsonNode rows=json.readTree(text);int waiting=0,done=0;appointmentRows.getChildren().clear();
                 for(JsonNode row:rows){String statusText=row.path("status").asText("UNKNOWN");if("CHECKED_IN".equals(statusText))waiting++;if("COMPLETED".equals(statusText))done++;
-                    HBox line=new HBox(14);line.getStyleClass().add("appointment-row");Label time=new Label(row.path("starts_at").asText("").replace('T',' '));time.getStyleClass().add("appointment-time");Label patient=new Label(row.path("patient_name").asText("Patient"));patient.getStyleClass().add("appointment-patient");Label doctor=new Label(row.path("doctor_name").asText(""));doctor.getStyleClass().add("muted");Label state=new Label(statusText.replace('_',' '));state.getStyleClass().add("status-pill");Region spacer=new Region();HBox.setHgrow(spacer,Priority.ALWAYS);line.getChildren().addAll(time,patient,doctor,spacer,state);appointmentRows.getChildren().add(line);
+                    HBox line=new HBox(14);line.setAlignment(javafx.geometry.Pos.CENTER_LEFT);line.getStyleClass().add("appointment-row");Label time=new Label(row.path("starts_at").asText("").replace('T',' '));time.getStyleClass().add("appointment-time");Label patient=new Label(row.path("patient_name").asText("Patient"));patient.getStyleClass().add("appointment-patient");Label doctor=new Label(row.path("doctor_name").asText(""));doctor.getStyleClass().add("muted");Label state=new Label(statusText.replace('_',' '));state.getStyleClass().add("status-pill");Region spacer=new Region();HBox.setHgrow(spacer,Priority.ALWAYS);line.getChildren().addAll(time,patient,doctor,spacer,state);appointmentRows.getChildren().add(line);
                 }
                 scheduled.setText(Integer.toString(rows.size()));checkedIn.setText(Integer.toString(waiting));completed.setText(Integer.toString(done));
                 if(rows.isEmpty())appointmentRows.getChildren().add(new Label("No appointments are booked for today."));
